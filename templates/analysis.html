@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Road Analysis | AI Road Guardian</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+
+            background:
+            linear-gradient(
+                135deg,
+                #eaf4ff,
+                #f7fbff
+            );
+
+            color: #1f2937;
+        }
+
+        header {
+            background: #123b5d;
+            color: white;
+
+            padding: 20px;
+
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        header p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 900px;
+
+            margin: 35px auto;
+
+            padding: 20px;
+        }
+
+        .analysis-card {
+            background: white;
+
+            border-radius: 15px;
+
+            padding: 30px;
+
+            box-shadow:
+            0 8px 25px
+            rgba(0, 0, 0, 0.12);
+        }
+
+        .status {
+            text-align: center;
+
+            background: #e8f5e9;
+
+            color: #176b3a;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            font-weight: bold;
+
+            margin-bottom: 25px;
+        }
+
+        .result-grid {
+            display: grid;
+
+            grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(200px, 1fr)
+            );
+
+            gap: 18px;
+        }
+
+        .result-box {
+            background: #f4f8fc;
+
+            border-left:
+            6px solid #1976d2;
+
+            padding: 20px;
+
+            border-radius: 8px;
+        }
+
+        .result-box h3 {
+            margin-top: 0;
+
+            color: #123b5d;
+        }
+
+        .high {
+            color: #c62828;
+
+            font-size: 22px;
+
+            font-weight: bold;
+        }
+
+        .medium {
+            color: #ef6c00;
+
+            font-size: 22px;
+
+            font-weight: bold;
+        }
+
+        .details {
+            margin-top: 25px;
+
+            background: #fff8e1;
+
+            padding: 20px;
+
+            border-radius: 10px;
+        }
+
+        .note {
+            margin-top: 20px;
+
+            color: #555;
+
+            font-size: 14px;
+        }
+
+        .buttons {
+            display: flex;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+
+            margin-top: 25px;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding: 13px 20px;
+
+            border-radius: 8px;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+        .primary {
+            background: #1976d2;
+
+            color: white;
+        }
+
+        .secondary {
+            background: #e5e7eb;
+
+            color: #1f2937;
+        }
+
+        .button:hover {
+            opacity: 0.85;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <h1>
+        🤖 AI Road Analysis
+    </h1>
+
+    <p>
+        AI Road Guardian
+    </p>
+
+</header>
+
+
+<div class="container">
+
+    <div class="analysis-card">
+
+        <div class="status">
+
+            ✅ Road report received.
+            AI analysis completed.
+
+        </div>
+
+
+        <div class="result-grid">
+
+            <div class="result-box">
+
+                <h3>
+                    Road Damage
+                </h3>
+
+                <p class="high">
+
+                    Severe
+
+                </p>
+
+            </div>
+
+
+            <div class="result-box">
+
+                <h3>
+                    Estimated Depth
+                </h3>
+
+                <p>
+
+                    8–12 cm
+
+                </p>
+
+            </div>
+
+
+            <div class="result-box">
+
+                <h3>
+                    Priority Level
+                </h3>
+
+                <p class="high">
+
+                    High
+
+                </p>
+
+            </div>
+
+
+            <div class="result-box">
+
+                <h3>
+                    Possible Cause
+                </h3>
+
+                <p>
+
+                    Water damage and
+                    surface wear
+
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="details">
+
+            <h2>
+                AI Recommendation
+            </h2>
+
+            <p>
+
+                This road issue should
+                be inspected by an
+                engineer. Temporary
+                safety marking is
+                recommended until
+                repair work begins.
+
+            </p>
+
+        </div>
+
+
+        <p class="note">
+
+            ⚠️ This is a prototype
+            AI result. The values are
+            currently demo estimates.
+            A real AI model can be
+            connected later.
+
+        </p>
+
+
+        <div class="buttons">
+
+            <a
+            href="/report"
+            class="button primary">
+
+                Report Another Problem
+
+            </a>
+<a
+    href="/track"
+    class="button primary">
+
+    Track My Complaint
+
+</a>
+
+            <a
+            href="/"
+            class="button secondary">
+
+                Back to Home
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

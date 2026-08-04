@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        AI Road Guardian
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                Arial, sans-serif;
+
+            color: #172033;
+
+            background: #f4f8fc;
+        }
+
+        nav {
+            display: flex;
+            justify-content:
+                space-between;
+
+            align-items: center;
+
+            padding:
+                18px 8%;
+
+            background: white;
+
+            box-shadow:
+                0 2px 12px
+                rgba(0, 0, 0, 0.08);
+        }
+
+        .logo {
+            font-size: 23px;
+            font-weight: bold;
+            color: #123b5d;
+        }
+
+        .nav-button {
+            text-decoration: none;
+
+            background: #1976d2;
+            color: white;
+
+            padding:
+                10px 17px;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+        }
+
+        .hero {
+            min-height: 560px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+
+            padding:
+                70px 20px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f3657,
+                    #1976d2
+                );
+
+            color: white;
+        }
+
+        .hero-content {
+            max-width: 850px;
+        }
+
+        .badge {
+            display: inline-block;
+
+            padding:
+                9px 15px;
+
+            border-radius: 30px;
+
+            background:
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.16
+                );
+
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size:
+                clamp(
+                    38px,
+                    7vw,
+                    72px
+                );
+
+            margin:
+                0 0 18px;
+        }
+
+        .hero p {
+            max-width: 700px;
+
+            margin:
+                0 auto 30px;
+
+            font-size: 19px;
+
+            line-height: 1.7;
+
+            color:
+                #e5f1ff;
+        }
+
+        .hero-buttons {
+            display: flex;
+
+            justify-content:
+                center;
+
+            gap: 15px;
+
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding:
+                14px 22px;
+
+            border-radius: 9px;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+        .primary {
+            background: white;
+            color: #123b5d;
+        }
+
+        .secondary {
+            color: white;
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.7
+                );
+        }
+
+        .section {
+            max-width: 1150px;
+
+            margin: auto;
+
+            padding:
+                70px 20px;
+        }
+
+        .section-title {
+            text-align: center;
+
+            margin-bottom: 40px;
+        }
+
+        .section-title h2 {
+            font-size: 34px;
+
+            color: #123b5d;
+
+            margin-bottom: 10px;
+        }
+
+        .section-title p {
+            color: #64748b;
+        }
+
+        .features {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(
+                        230px,
+                        1fr
+                    )
+                );
+
+            gap: 22px;
+        }
+
+        .card {
+            background: white;
+
+            padding: 27px;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 7px 22px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.08
+                );
+        }
+
+        .icon {
+            font-size: 35px;
+        }
+
+        .card h3 {
+            color: #123b5d;
+        }
+
+        .card p {
+            line-height: 1.6;
+
+            color: #64748b;
+        }
+
+        .steps {
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(
+                        200px,
+                        1fr
+                    )
+                );
+
+            gap: 20px;
+        }
+
+        .step {
+            text-align: center;
+
+            padding: 20px;
+        }
+
+        .step-number {
+            width: 52px;
+            height: 52px;
+
+            margin:
+                auto auto 15px;
+
+            display: flex;
+
+            justify-content:
+                center;
+
+            align-items: center;
+
+            border-radius: 50%;
+
+            background: #1976d2;
+
+            color: white;
+
+            font-size: 22px;
+
+            font-weight: bold;
+        }
+
+        footer {
+            text-align: center;
+
+            padding: 25px;
+
+            background: #123b5d;
+
+            color: #dbeafe;
+        }
+
+        @media
+        (max-width: 650px) {
+
+            nav {
+                padding:
+                    15px 5%;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .hero {
+                min-height: 500px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<nav>
+
+    <div class="logo">
+
+        🛣️ AI Road Guardian
+
+    </div>
+
+    <a
+        href="/report"
+        class="nav-button">
+
+        Report Issue
+
+    </a>
+
+</nav>
+
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="badge">
+
+            🤖 AI-Powered Road Safety
+
+        </div>
+
+        <h1>
+
+            Safer Roads.
+            Smarter Repairs.
+
+        </h1>
+
+        <p>
+
+            Report road damage,
+            upload a photo, receive
+            AI-based analysis, and
+            track your complaint.
+
+        </p>
+
+        <div class="hero-buttons">
+
+            <a
+                href="/report"
+                class="button primary">
+
+                Report a Road Issue
+
+            </a>
+
+            <a
+                href="/track"
+                class="button secondary">
+
+                Track My Complaint
+
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="section">
+
+    <div class="section-title">
+
+        <h2>
+
+            How AI Road Guardian Helps
+
+        </h2>
+
+        <p>
+
+            A simple system for
+            citizens and road
+            maintenance teams.
+
+        </p>
+
+    </div>
+
+
+    <div class="features">
+
+        <div class="card">
+
+            <div class="icon">
+
+                📷
+
+            </div>
+
+            <h3>
+
+                Upload Evidence
+
+            </h3>
+
+            <p>
+
+                Upload a photo of
+                potholes, cracks, or
+                other road damage.
+
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="icon">
+
+                🤖
+
+            </div>
+
+            <h3>
+
+                AI Analysis
+
+            </h3>
+
+            <p>
+
+                AI helps estimate
+                damage severity and
+                repair priority.
+
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="icon">
+
+                📍
+
+            </div>
+
+            <h3>
+
+                Location Details
+
+            </h3>
+
+            <p>
+
+                Reports include
+                location information
+                for faster action.
+
+            </p>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="icon">
+
+                🔎
+
+            </div>
+
+            <h3>
+
+                Track Progress
+
+            </h3>
+
+            <p>
+
+                Check the status of
+                your road complaint.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="section">
+
+    <div class="section-title">
+
+        <h2>
+
+            Report in 4 Easy Steps
+
+        </h2>
+
+    </div>
+
+
+    <div class="steps">
+
+        <div class="step">
+
+            <div class="step-number">
+
+                1
+
+            </div>
+
+            <h3>
+
+                Upload Photo
+
+            </h3>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+
+                2
+
+            </div>
+
+            <h3>
+
+                Add Location
+
+            </h3>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+
+                3
+
+            </div>
+
+            <h3>
+
+                Get AI Analysis
+
+            </h3>
+
+        </div>
+
+
+        <div class="step">
+
+            <div class="step-number">
+
+                4
+
+            </div>
+
+            <h3>
+
+                Track Repair
+
+            </h3>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<footer>
+
+    © 2026 AI Road Guardian
+
+</footer>
+
+</body>
+
+</html>

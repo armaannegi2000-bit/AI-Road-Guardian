@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Track Complaint | AI Road Guardian
+    </title>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #eef5fb;
+            color: #1f2937;
+        }
+
+        header {
+            background: #123b5d;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow:
+                0 8px 25px
+                rgba(0, 0, 0, 0.12);
+        }
+
+        h2 {
+            color: #123b5d;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 15px 0;
+            border:
+                1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 13px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .status-box {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            background: #f1f8ff;
+            border-left:
+                6px solid #1976d2;
+            border-radius: 8px;
+        }
+
+        .step {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 7px;
+        }
+
+        .completed {
+            color: #16803c;
+            font-weight: bold;
+        }
+
+        .progress {
+            color: #e66a00;
+            font-weight: bold;
+        }
+
+        .home-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: #123b5d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<header>
+
+    <h1>
+        🛣️ Track My Complaint
+    </h1>
+
+    <p>
+        AI Road Guardian
+    </p>
+
+</header>
+
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>
+            Check Your Road Report
+        </h2>
+
+        <p>
+            Enter your complaint ID
+            to see its current status.
+        </p>
+
+        <input
+            id="complaintId"
+            type="text"
+            placeholder="Example: RG-1001">
+
+        <button
+            onclick="trackComplaint()">
+
+            Track Complaint
+
+        </button>
+
+
+        <div
+            class="status-box"
+            id="statusBox">
+
+            <h2>
+                Complaint Status
+            </h2>
+
+            <p>
+
+                Complaint ID:
+                <strong>
+                    RG-1001
+                </strong>
+
+            </p>
+
+            <div class="step">
+
+                <span class="completed">
+
+                    ✓ Report Received
+
+                </span>
+
+            </div>
+
+            <div class="step">
+
+                <span class="completed">
+
+                    ✓ AI Analysis Completed
+
+                </span>
+
+            </div>
+
+            <div class="step">
+
+                <div class="step">
+
+    Current Status:
+
+    <strong>
+        {{ complaint["status"] }}
+    </strong>
+
+</div>
+            </div>
+
+            <div class="step">
+
+                Repair Work:
+                Pending
+
+            </div>
+
+        </div>
+
+
+        <a
+            href="/"
+            class="home-link">
+
+            ← Back to Home
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function trackComplaint() {
+
+    const complaintId =
+        document.getElementById(
+            "complaintId"
+        ).value;
+
+    if (
+        complaintId.trim() === ""
+    ) {
+
+        alert(
+            "Please enter a Complaint ID."
+        );
+
+        return;
+    }
+
+    document
+        .getElementById(
+            "statusBox"
+        )
+        .style.display = "block";
+
+}
+
+</script>
+
+</body>
+
+</html>

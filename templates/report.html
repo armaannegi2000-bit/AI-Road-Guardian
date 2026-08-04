@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Report a Road Problem | AI Road Guardian</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+
+            background:
+            linear-gradient(135deg,
+            #e8f4f8,
+            #d9eaf7);
+
+            min-height: 100vh;
+
+            padding: 40px 15px;
+        }
+
+        .container {
+            max-width: 700px;
+
+            margin: auto;
+
+            background-color: white;
+
+            padding: 35px;
+
+            border-radius: 15px;
+
+            box-shadow:
+            0 8px 25px
+            rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            text-align: center;
+
+            color: #123b5d;
+
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+
+            color: #666;
+
+            margin-bottom: 30px;
+
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+
+            font-weight: bold;
+
+            color: #333;
+
+            margin-top: 18px;
+
+            margin-bottom: 8px;
+        }
+
+        input,
+        textarea,
+        select {
+
+            width: 100%;
+
+            padding: 13px;
+
+            border:
+            1px solid #b8c2cc;
+
+            border-radius: 8px;
+
+            font-size: 16px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        .location-box {
+
+            background-color: #eef8f5;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            margin-top: 18px;
+        }
+
+        .location-box p {
+            margin-bottom: 10px;
+        }
+
+        .location-button {
+
+            padding: 10px 15px;
+
+            background-color: #167a67;
+
+            color: white;
+
+            border: none;
+
+            border-radius: 7px;
+
+            cursor: pointer;
+        }
+
+        .submit-button {
+
+            width: 100%;
+
+            margin-top: 25px;
+
+            padding: 15px;
+
+            background-color: #0b5d8c;
+
+            color: white;
+
+            border: none;
+
+            border-radius: 8px;
+
+            font-size: 17px;
+
+            font-weight: bold;
+
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #08476b;
+        }
+
+        .message {
+
+            display: none;
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            text-align: center;
+
+            background-color: #dff5e8;
+
+            color: #176b3a;
+
+            border-radius: 8px;
+
+            font-weight: bold;
+        }
+
+        .back {
+
+            display: block;
+
+            text-align: center;
+
+            margin-top: 22px;
+
+            color: #123b5d;
+
+            text-decoration: none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🛣️ Report a Road Problem</h1>
+
+    <p class="subtitle">
+
+        Upload a photo, share the location,
+        and help authorities identify
+        road damage faster.
+
+    </p>
+
+
+<form
+    id="roadForm"
+    action="/submit-report"
+    method="POST"
+    enctype="multipart/form-data">
+
+        <label for="photo">
+
+            Upload Road Photo
+
+        </label>
+
+        <input
+
+        type="file"
+
+        id="photo"
+
+        accept="image/*"
+
+        required>
+
+
+        <label for="problem">
+
+            Type of Road Problem
+
+        </label>
+
+        <select
+
+        id="problem"
+
+        required>
+
+            <option value="">
+
+                Select a problem
+
+            </option>
+
+            <option>
+
+                Pothole
+
+            </option>
+
+            <option>
+
+                Cracked Road
+
+            </option>
+
+            <option>
+
+                Waterlogging
+
+            </option>
+
+            <option>
+
+                Damaged Road Surface
+
+            </option>
+
+            <option>
+
+                Other
+
+            </option>
+
+        </select>
+
+
+        <div class="location-box">
+
+            <p>
+
+                📍 Location
+
+            </p>
+
+            <button
+
+            type="button"
+
+            class="location-button"
+
+            onclick="getLocation()">
+
+                Use My Current Location
+
+            </button>
+
+            <p id="locationText">
+
+                Location not selected
+
+            </p>
+
+        </div>
+
+
+        <label for="description">
+
+            Describe the Problem
+
+        </label>
+
+        <textarea
+
+        id="description"
+
+        rows="5"
+
+        placeholder=
+        "Example: A large pothole is causing traffic problems..."
+
+        required>
+
+        </textarea>
+
+
+        <button
+
+        type="submit"
+
+        class="submit-button">
+
+            Submit Report for AI Analysis
+
+        </button>
+
+
+    </form>
+
+
+    <div
+
+    class="message"
+
+    id="successMessage">
+
+        ✅ Report submitted!
+        AI analysis will be shown next.
+
+    </div>
+
+
+    <a
+
+    class="back"
+
+    href="/">
+
+        ← Back to Home
+
+    </a>
+
+</div>
+
+
+<script>
+
+function getLocation() {
+
+    const locationText =
+    document.getElementById(
+    "locationText"
+    );
+
+    if (
+    navigator.geolocation
+    ) {
+
+        locationText.innerText =
+        "Getting location...";
+
+        navigator.geolocation
+        .getCurrentPosition(
+
+        function(position) {
+
+            const latitude =
+            position.coords.latitude;
+
+            const longitude =
+            position.coords.longitude;
+
+            locationText.innerText =
+            "Location captured: " +
+            latitude.toFixed(5) +
+            ", " +
+            longitude.toFixed(5);
+
+        },
+
+        function() {
+
+            locationText.innerText =
+            "Location permission was denied.";
+
+        }
+
+        );
+
+    } else {
+
+        locationText.innerText =
+        "Location is not supported.";
+
+    }
+
+}
+
+
+const roadForm =
+document.getElementById(
+"roadForm"
+);
+
+
+roadForm.addEventListener(
+
+"submit",
+
+function(event) {
+
+    
+
+    document
+    .getElementById(
+    "successMessage"
+    )
+    .style.display =
+    "block";
+
+}
+
+);
+
+</script>
+
+</body>
+
+</html>
