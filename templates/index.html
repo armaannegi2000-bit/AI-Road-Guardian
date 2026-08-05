@@ -2,622 +2,742 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
 
-    <title>
-        AI Road Guardian
-    </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
+<title>
+AI Road Guardian
+</title>
 
-        * {
-            box-sizing: border-box;
-        }
 
-        body {
-            margin: 0;
-            font-family:
-                Arial, sans-serif;
+<style>
 
-            color: #172033;
+*{
+    box-sizing:border-box;
+}
 
-            background: #f4f8fc;
-        }
 
-        nav {
-            display: flex;
-            justify-content:
-                space-between;
+body{
 
-            align-items: center;
+    margin:0;
 
-            padding:
-                18px 8%;
+    font-family:Arial,sans-serif;
 
-            background: white;
+    color:#172033;
 
-            box-shadow:
-                0 2px 12px
-                rgba(0, 0, 0, 0.08);
-        }
+    background:#f4f8fc;
+}
 
-        .logo {
-            font-size: 23px;
-            font-weight: bold;
-            color: #123b5d;
-        }
 
-        .nav-button {
-            text-decoration: none;
 
-            background: #1976d2;
-            color: white;
+nav{
 
-            padding:
-                10px 17px;
+    display:flex;
 
-            border-radius: 8px;
+    justify-content:space-between;
 
-            font-weight: bold;
-        }
+    align-items:center;
 
-        .hero {
-            min-height: 560px;
+    padding:18px 8%;
 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+    background:white;
 
-            text-align: center;
+    box-shadow:
+    0 2px 12px rgba(0,0,0,0.08);
 
-            padding:
-                70px 20px;
+}
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #0f3657,
-                    #1976d2
-                );
 
-            color: white;
-        }
 
-        .hero-content {
-            max-width: 850px;
-        }
+.logo{
 
-        .badge {
-            display: inline-block;
+    font-size:23px;
 
-            padding:
-                9px 15px;
+    font-weight:bold;
 
-            border-radius: 30px;
+    color:#123b5d;
 
-            background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.16
-                );
+}
 
-            margin-bottom: 20px;
-        }
 
-        .hero h1 {
-            font-size:
-                clamp(
-                    38px,
-                    7vw,
-                    72px
-                );
 
-            margin:
-                0 0 18px;
-        }
+.nav-links{
 
-        .hero p {
-            max-width: 700px;
+    display:flex;
 
-            margin:
-                0 auto 30px;
+    gap:12px;
 
-            font-size: 19px;
+}
 
-            line-height: 1.7;
 
-            color:
-                #e5f1ff;
-        }
 
-        .hero-buttons {
-            display: flex;
+.nav-button{
 
-            justify-content:
-                center;
+    text-decoration:none;
 
-            gap: 15px;
+    background:#123b5d;
 
-            flex-wrap: wrap;
-        }
+    color:white;
 
-        .button {
-            display: inline-block;
+    padding:10px 17px;
 
-            padding:
-                14px 22px;
+    border-radius:8px;
 
-            border-radius: 9px;
+    font-weight:bold;
 
-            text-decoration: none;
+}
 
-            font-weight: bold;
-        }
 
-        .primary {
-            background: white;
-            color: #123b5d;
-        }
 
-        .secondary {
-            color: white;
 
-            border:
-                1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.7
-                );
-        }
+.hero{
 
-        .section {
-            max-width: 1150px;
+    min-height:560px;
 
-            margin: auto;
+    display:flex;
 
-            padding:
-                70px 20px;
-        }
+    justify-content:center;
 
-        .section-title {
-            text-align: center;
+    align-items:center;
 
-            margin-bottom: 40px;
-        }
+    text-align:center;
 
-        .section-title h2 {
-            font-size: 34px;
+    padding:70px 20px;
 
-            color: #123b5d;
+    background:
 
-            margin-bottom: 10px;
-        }
+    linear-gradient(
+        135deg,
+        #0f3657,
+        #1976d2
+    );
 
-        .section-title p {
-            color: #64748b;
-        }
+    color:white;
 
-        .features {
-            display: grid;
+}
 
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(
-                        230px,
-                        1fr
-                    )
-                );
 
-            gap: 22px;
-        }
 
-        .card {
-            background: white;
+.hero-content{
 
-            padding: 27px;
+    max-width:850px;
 
-            border-radius: 15px;
+}
 
-            box-shadow:
-                0 7px 22px
-                rgba(
-                    0,
-                    0,
-                    0,
-                    0.08
-                );
-        }
 
-        .icon {
-            font-size: 35px;
-        }
 
-        .card h3 {
-            color: #123b5d;
-        }
+.badge{
 
-        .card p {
-            line-height: 1.6;
+    display:inline-block;
 
-            color: #64748b;
-        }
+    padding:9px 15px;
 
-        .steps {
-            display: grid;
+    border-radius:30px;
 
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(
-                        200px,
-                        1fr
-                    )
-                );
+    background:
+    rgba(255,255,255,0.16);
 
-            gap: 20px;
-        }
+    margin-bottom:20px;
 
-        .step {
-            text-align: center;
+}
 
-            padding: 20px;
-        }
 
-        .step-number {
-            width: 52px;
-            height: 52px;
 
-            margin:
-                auto auto 15px;
+.hero h1{
 
-            display: flex;
+    font-size:
 
-            justify-content:
-                center;
+    clamp(
+        38px,
+        7vw,
+        72px
+    );
 
-            align-items: center;
+    margin:0 0 18px;
 
-            border-radius: 50%;
+}
 
-            background: #1976d2;
 
-            color: white;
 
-            font-size: 22px;
+.hero p{
 
-            font-weight: bold;
-        }
+    max-width:700px;
 
-        footer {
-            text-align: center;
+    margin:0 auto 30px;
 
-            padding: 25px;
+    font-size:19px;
 
-            background: #123b5d;
+    line-height:1.7;
 
-            color: #dbeafe;
-        }
+    color:#e5f1ff;
 
-        @media
-        (max-width: 650px) {
+}
 
-            nav {
-                padding:
-                    15px 5%;
-            }
 
-            .logo {
-                font-size: 18px;
-            }
 
-            .hero {
-                min-height: 500px;
-            }
+.hero-buttons{
 
-        }
+    display:flex;
 
-    </style>
+    justify-content:center;
+
+    gap:15px;
+
+    flex-wrap:wrap;
+
+}
+
+
+
+.button{
+
+    display:inline-block;
+
+    padding:14px 22px;
+
+    border-radius:9px;
+
+    text-decoration:none;
+
+    font-weight:bold;
+
+}
+
+
+
+.primary{
+
+    background:white;
+
+    color:#123b5d;
+
+}
+
+
+
+.secondary{
+
+    color:white;
+
+    border:
+    1px solid rgba(255,255,255,0.7);
+
+}
+
+
+
+.section{
+
+    max-width:1150px;
+
+    margin:auto;
+
+    padding:70px 20px;
+
+}
+
+
+
+.section-title{
+
+    text-align:center;
+
+    margin-bottom:40px;
+
+}
+
+
+
+.section-title h2{
+
+    font-size:34px;
+
+    color:#123b5d;
+
+}
+
+
+
+.section-title p{
+
+    color:#64748b;
+
+}
+
+
+
+.features{
+
+    display:grid;
+
+    grid-template-columns:
+
+    repeat(
+        auto-fit,
+        minmax(230px,1fr)
+    );
+
+    gap:22px;
+
+}
+
+
+
+.card{
+
+    background:white;
+
+    padding:27px;
+
+    border-radius:15px;
+
+    box-shadow:
+
+    0 7px 22px rgba(0,0,0,0.08);
+
+}
+
+
+
+.icon{
+
+    font-size:35px;
+
+}
+
+
+
+.card h3{
+
+    color:#123b5d;
+
+}
+
+
+
+.card p{
+
+    color:#64748b;
+
+    line-height:1.6;
+
+}
+
+
+
+.steps{
+
+    display:grid;
+
+    grid-template-columns:
+
+    repeat(
+        auto-fit,
+        minmax(200px,1fr)
+    );
+
+    gap:20px;
+
+}
+
+
+
+.step{
+
+    text-align:center;
+
+}
+
+
+
+.step-number{
+
+    width:52px;
+
+    height:52px;
+
+    margin:auto auto 15px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    border-radius:50%;
+
+    background:#1976d2;
+
+    color:white;
+
+    font-size:22px;
+
+    font-weight:bold;
+
+}
+
+
+
+footer{
+
+    text-align:center;
+
+    padding:25px;
+
+    background:#123b5d;
+
+    color:#dbeafe;
+
+}
+
+
+
+@media(max-width:650px){
+
+    nav{
+
+        padding:15px 5%;
+
+    }
+
+
+    .logo{
+
+        font-size:18px;
+
+    }
+
+
+    .hero{
+
+        min-height:500px;
+
+    }
+
+}
+
+
+</style>
 
 </head>
 
+
+
 <body>
+
+
 
 <nav>
 
-    <div class="logo">
 
-        🛣️ AI Road Guardian
+<div class="logo">
 
-    </div>
+🛣️ AI Road Guardian
 
-    <a
-        href="/report"
-        class="nav-button">
+</div>
 
-        Report Issue
 
-    </a>
+
+<div class="nav-links">
+
+
+<a
+href="/government-login"
+class="nav-button">
+
+🔒 Government Login
+
+</a>
+
+
+</div>
+
 
 </nav>
 
 
+
+
+
 <section class="hero">
 
-    <div class="hero-content">
 
-        <div class="badge">
+<div class="hero-content">
 
-            🤖 AI-Powered Road Safety
 
-        </div>
+<div class="badge">
 
-        <h1>
+🤖 AI-Powered Road Safety
 
-            Safer Roads.
-            Smarter Repairs.
+</div>
 
-        </h1>
 
-        <p>
 
-            Report road damage,
-            upload a photo, receive
-            AI-based analysis, and
-            track your complaint.
+<h1>
 
-        </p>
+Safer Roads.
+Smarter Repairs.
 
-        <div class="hero-buttons">
+</h1>
 
-            <a
-                href="/report"
-                class="button primary">
 
-                Report a Road Issue
 
-            </a>
+<p>
 
-            <a
-                href="/track"
-                class="button secondary">
+Report road damage,
+upload a photo, receive
+AI-based analysis, and
+track your complaint.
 
-                Track My Complaint
+</p>
 
-            </a>
 
-        </div>
 
-    </div>
+
+<div class="hero-buttons">
+
+
+<a
+href="/report"
+class="button primary">
+
+Report a Road Issue
+
+</a>
+
+
+
+<a
+href="/track"
+class="button secondary">
+
+Track My Complaint
+
+</a>
+
+
+
+</div>
+
+
+</div>
+
 
 </section>
+
+
+
 
 
 <section class="section">
 
-    <div class="section-title">
 
-        <h2>
-
-            How AI Road Guardian Helps
-
-        </h2>
-
-        <p>
-
-            A simple system for
-            citizens and road
-            maintenance teams.
-
-        </p>
-
-    </div>
+<div class="section-title">
 
 
-    <div class="features">
+<h2>
 
-        <div class="card">
+How AI Road Guardian Helps
 
-            <div class="icon">
-
-                📷
-
-            </div>
-
-            <h3>
-
-                Upload Evidence
-
-            </h3>
-
-            <p>
-
-                Upload a photo of
-                potholes, cracks, or
-                other road damage.
-
-            </p>
-
-        </div>
+</h2>
 
 
-        <div class="card">
+<p>
 
-            <div class="icon">
+A simple system for citizens and road maintenance teams.
 
-                🤖
-
-            </div>
-
-            <h3>
-
-                AI Analysis
-
-            </h3>
-
-            <p>
-
-                AI helps estimate
-                damage severity and
-                repair priority.
-
-            </p>
-
-        </div>
+</p>
 
 
-        <div class="card">
-
-            <div class="icon">
-
-                📍
-
-            </div>
-
-            <h3>
-
-                Location Details
-
-            </h3>
-
-            <p>
-
-                Reports include
-                location information
-                for faster action.
-
-            </p>
-
-        </div>
+</div>
 
 
-        <div class="card">
 
-            <div class="icon">
 
-                🔎
+<div class="features">
 
-            </div>
 
-            <h3>
 
-                Track Progress
+<div class="card">
 
-            </h3>
+<div class="icon">
+📷
+</div>
 
-            <p>
+<h3>
+Upload Evidence
+</h3>
 
-                Check the status of
-                your road complaint.
+<p>
+Upload photos of potholes, cracks, or road damage.
+</p>
 
-            </p>
+</div>
 
-        </div>
 
-    </div>
+
+
+<div class="card">
+
+<div class="icon">
+🤖
+</div>
+
+<h3>
+AI Analysis
+</h3>
+
+<p>
+AI estimates damage severity and repair priority.
+</p>
+
+</div>
+
+
+
+
+<div class="card">
+
+<div class="icon">
+📍
+</div>
+
+<h3>
+Location Details
+</h3>
+
+<p>
+Reports include location information for faster action.
+</p>
+
+</div>
+
+
+
+
+<div class="card">
+
+<div class="icon">
+🔎
+</div>
+
+<h3>
+Track Progress
+</h3>
+
+<p>
+Check the status of your road complaint.
+</p>
+
+</div>
+
+
+
+</div>
+
 
 </section>
+
+
+
+
 
 
 <section class="section">
 
-    <div class="section-title">
 
-        <h2>
-
-            Report in 4 Easy Steps
-
-        </h2>
-
-    </div>
+<div class="section-title">
 
 
-    <div class="steps">
+<h2>
 
-        <div class="step">
+Report in 4 Easy Steps
 
-            <div class="step-number">
-
-                1
-
-            </div>
-
-            <h3>
-
-                Upload Photo
-
-            </h3>
-
-        </div>
+</h2>
 
 
-        <div class="step">
-
-            <div class="step-number">
-
-                2
-
-            </div>
-
-            <h3>
-
-                Add Location
-
-            </h3>
-
-        </div>
+</div>
 
 
-        <div class="step">
-
-            <div class="step-number">
-
-                3
-
-            </div>
-
-            <h3>
-
-                Get AI Analysis
-
-            </h3>
-
-        </div>
 
 
-        <div class="step">
+<div class="steps">
 
-            <div class="step-number">
 
-                4
+<div class="step">
 
-            </div>
+<div class="step-number">
+1
+</div>
 
-            <h3>
+<h3>
+Upload Photo
+</h3>
 
-                Track Repair
+</div>
 
-            </h3>
 
-        </div>
 
-    </div>
+<div class="step">
+
+<div class="step-number">
+2
+</div>
+
+<h3>
+Add Location
+</h3>
+
+</div>
+
+
+
+<div class="step">
+
+<div class="step-number">
+3
+</div>
+
+<h3>
+Get AI Analysis
+</h3>
+
+</div>
+
+
+
+<div class="step">
+
+<div class="step-number">
+4
+</div>
+
+<h3>
+Track Repair
+</h3>
+
+</div>
+
+
+
+</div>
+
 
 </section>
+
+
+
 
 
 <footer>
 
-    © 2026 AI Road Guardian
+© 2026 AI Road Guardian
 
 </footer>
+
+
 
 </body>
 

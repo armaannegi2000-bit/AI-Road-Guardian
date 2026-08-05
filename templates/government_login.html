@@ -2,339 +2,413 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Government Login | AI Road Guardian
-    </title>
+<title>Government Login | AI Road Guardian</title>
 
-    <style>
+<style>
 
-        * {
-            box-sizing: border-box;
-        }
+*{
+    box-sizing:border-box;
+}
 
-        body {
-            margin: 0;
-            min-height: 100vh;
+body{
 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+    margin:0;
+    min-height:100vh;
 
-            font-family: Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #123b5d,
-                    #1976d2
-                );
-        }
+    font-family:Arial,sans-serif;
 
-        .login-card {
-            width: 90%;
-            max-width: 420px;
+    background:
+    linear-gradient(
+        135deg,
+        #123b5d,
+        #1976d2
+    );
 
-            background: white;
+}
 
-            padding: 35px;
 
-            border-radius: 18px;
+.login-card{
 
-            box-shadow:
-                0 12px 35px
-                rgba(0, 0, 0, 0.25);
-        }
+    width:90%;
+    max-width:420px;
 
-        h1 {
-            margin-top: 0;
+    background:white;
 
-            color: #123b5d;
+    padding:35px;
 
-            text-align: center;
-        }
+    border-radius:18px;
 
-        .subtitle {
-            text-align: center;
+    box-shadow:
+    0 12px 35px rgba(0,0,0,0.25);
 
-            color: #64748b;
+}
 
-            margin-bottom: 28px;
-        }
 
-        label {
-            display: block;
+h1{
 
-            margin-top: 18px;
+    text-align:center;
 
-            margin-bottom: 7px;
+    color:#123b5d;
 
-            font-weight: bold;
-        }
+}
 
-        input {
-            width: 100%;
 
-            padding: 13px;
+.subtitle{
 
-            border:
-                1px solid #cbd5e1;
+    text-align:center;
 
-            border-radius: 8px;
+    color:#64748b;
 
-            font-size: 16px;
-        }
+    margin-bottom:25px;
 
-        button {
-            width: 100%;
+}
 
-            margin-top: 25px;
 
-            padding: 14px;
+label{
 
-            border: none;
+    display:block;
 
-            border-radius: 8px;
+    margin-top:15px;
 
-            background: #1976d2;
+    margin-bottom:7px;
 
-            color: white;
+    font-weight:bold;
 
-            font-size: 16px;
+}
 
-            font-weight: bold;
 
-            cursor: pointer;
-        }
+input{
 
-        button:hover {
-            opacity: 0.9;
-        }
+    width:100%;
 
-        .message {
-            display: none;
+    padding:13px;
 
-            margin-top: 20px;
+    border:1px solid #cbd5e1;
 
-            padding: 12px;
+    border-radius:8px;
 
-            text-align: center;
+    font-size:16px;
 
-            border-radius: 8px;
-        }
+}
 
-        .success {
-            background: #dcfce7;
 
-            color: #166534;
-        }
+button{
 
-        .error {
-            background: #fee2e2;
+    width:100%;
 
-            color: #b91c1c;
-        }
+    margin-top:25px;
 
-        .home-link {
-            display: block;
+    padding:14px;
 
-            text-align: center;
+    border:none;
 
-            margin-top: 22px;
+    border-radius:8px;
 
-            color: #123b5d;
+    background:#1976d2;
 
-            text-decoration: none;
+    color:white;
 
-            font-weight: bold;
-        }
+    font-size:16px;
 
-        .demo-note {
-            margin-top: 20px;
+    font-weight:bold;
 
-            padding: 12px;
+    cursor:pointer;
 
-            background: #fff7ed;
+}
 
-            border-radius: 8px;
 
-            font-size: 13px;
+button:disabled{
 
-            color: #9a3412;
-        }
+    opacity:0.7;
 
-    </style>
+}
+
+
+.message{
+
+    display:none;
+
+    margin-top:20px;
+
+    padding:12px;
+
+    text-align:center;
+
+    border-radius:8px;
+
+    font-weight:bold;
+
+}
+
+
+.success{
+
+    display:block;
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+
+.error{
+
+    display:block;
+
+    background:#fee2e2;
+
+    color:#b91c1c;
+
+}
+
+
+.demo-note{
+
+    margin-top:20px;
+
+    padding:12px;
+
+    background:#fff7ed;
+
+    border-radius:8px;
+
+    color:#9a3412;
+
+    font-size:13px;
+
+}
+
+
+.home-link{
+
+    display:block;
+
+    text-align:center;
+
+    margin-top:20px;
+
+    text-decoration:none;
+
+    color:#123b5d;
+
+    font-weight:bold;
+
+}
+
+</style>
 
 </head>
 
+
 <body>
+
 
 <div class="login-card">
 
-    <h1>
-        🛣️ Government Login
-    </h1>
 
-    <p class="subtitle">
-        Authorized officers and engineers only
-    </p>
-
-    <form id="loginForm">
-
-        <label>
-            Government Email
-        </label>
-
-        <input
-            id="email"
-            type="email"
-            placeholder="officer@government.in"
-            required>
+<h1>
+🛣️ Government Login
+</h1>
 
 
-        <label>
-            Password
-        </label>
-
-        <input
-            id="password"
-            type="password"
-            placeholder="Enter password"
-            required>
+<p class="subtitle">
+Authorized officers and engineers only
+</p>
 
 
-        <button type="submit">
 
-            Login to Dashboard
-
-        </button>
-
-    </form>
+<form id="loginForm">
 
 
-    <div
-        id="message"
-        class="message">
-
-    </div>
+<label>
+Government Email
+</label>
 
 
-    <div class="demo-note">
-
-        <strong>
-            Demo login:
-        </strong>
-
-        <br>
-
-        Email:
-        officer@government.in
-
-        <br>
-
-        Password:
-        road123
-
-    </div>
+<input
+id="email"
+type="email"
+name="username"
+placeholder="officer@government.in"
+required>
 
 
-    <a
-        href="/"
-        class="home-link">
 
-        ← Back to Home
+<label>
+Password
+</label>
 
-    </a>
+
+<input
+id="password"
+type="password"
+name="password"
+placeholder="Enter password"
+required>
+
+
+
+<button id="loginBtn" type="submit">
+
+Login to Dashboard
+
+</button>
+
+
+</form>
+
+
+
+<div id="message" class="message"></div>
+
+
+
+<div class="demo-note">
+
+<strong>Demo login:</strong>
+
+<br>
+
+Email: officer@government.in
+
+<br>
+
+Password: road123
 
 </div>
 
 
+
+<a href="/" class="home-link">
+
+← Back to Home
+
+</a>
+
+
+</div>
+
+
+
+
 <script>
 
-document
-    .getElementById(
-        "loginForm"
-    )
-    .addEventListener(
-        "submit",
-        function(event) {
 
-            event.preventDefault();
+const form =
+document.getElementById("loginForm");
 
-            const email =
-                document
-                .getElementById(
-                    "email"
-                )
-                .value;
 
-            const password =
-                document
-                .getElementById(
-                    "password"
-                )
-                .value;
+const btn =
+document.getElementById("loginBtn");
 
-            const message =
-                document
-                .getElementById(
-                    "message"
-                );
 
-            if (
-                email ===
-                "officer@government.in"
-                &&
-                password ===
-                "road123"
-            ) {
+const message =
+document.getElementById("message");
 
-                message
-                .style
-                .display = "block";
 
-                message
-                .className =
-                "message success";
 
-                message
-                .innerText =
-                "Login successful! Opening dashboard...";
+form.addEventListener(
+"submit",
+async function(e){
 
-                setTimeout(
-                    function() {
 
-                        window.location.href =
-                        "/dashboard";
+e.preventDefault();
 
-                    },
-                    1000
-                );
 
-            } else {
 
-                message
-                .style
-                .display = "block";
+btn.innerHTML =
+"🔄 Verifying credentials...";
 
-                message
-                .className =
-                "message error";
 
-                message
-                .innerText =
-                "Incorrect email or password.";
+btn.disabled = true;
 
-            }
 
-        }
-    );
+
+let formData =
+new FormData(form);
+
+
+
+let response =
+await fetch(
+"/government-auth",
+{
+method:"POST",
+body:formData
+}
+);
+
+
+
+let data =
+await response.json();
+
+
+
+if(data.success){
+
+
+message.style.display="block";
+
+message.className =
+"message success";
+
+
+message.innerHTML =
+"✅ Login successful! Opening dashboard...";
+
+
+
+setTimeout(
+function(){
+
+window.location.href="/dashboard";
+
+},
+1000
+);
+
+
+
+}
+
+else{
+
+
+message.style.display="block";
+
+message.className =
+"message error";
+
+
+message.innerHTML =
+"❌ Incorrect email or password.";
+
+
+btn.innerHTML =
+"Login to Dashboard";
+
+
+btn.disabled=false;
+
+
+}
+
+
+
+});
 
 </script>
+
 
 </body>
 
