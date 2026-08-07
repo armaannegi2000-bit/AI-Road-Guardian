@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -21,9 +22,11 @@
             font-family: Arial, sans-serif;
 
             background:
-            linear-gradient(135deg,
-            #e8f4f8,
-            #d9eaf7);
+            linear-gradient(
+                135deg,
+                #e8f4f8,
+                #d9eaf7
+            );
 
             min-height: 100vh;
 
@@ -31,6 +34,7 @@
         }
 
         .container {
+
             max-width: 700px;
 
             margin: auto;
@@ -47,6 +51,7 @@
         }
 
         h1 {
+
             text-align: center;
 
             color: #123b5d;
@@ -55,6 +60,7 @@
         }
 
         .subtitle {
+
             text-align: center;
 
             color: #666;
@@ -65,6 +71,7 @@
         }
 
         label {
+
             display: block;
 
             font-weight: bold;
@@ -93,6 +100,7 @@
         }
 
         textarea {
+
             resize: vertical;
         }
 
@@ -108,6 +116,7 @@
         }
 
         .location-box p {
+
             margin-bottom: 10px;
         }
 
@@ -150,26 +159,8 @@
         }
 
         .submit-button:hover {
+
             background-color: #08476b;
-        }
-
-        .message {
-
-            display: none;
-
-            margin-top: 20px;
-
-            padding: 15px;
-
-            text-align: center;
-
-            background-color: #dff5e8;
-
-            color: #176b3a;
-
-            border-radius: 8px;
-
-            font-weight: bold;
         }
 
         .back {
@@ -189,11 +180,14 @@
 
 </head>
 
+
 <body>
 
 <div class="container">
 
-    <h1>🛣️ Report a Road Problem</h1>
+    <h1>
+        🛣️ Report a Road Problem
+    </h1>
 
     <p class="subtitle">
 
@@ -204,163 +198,133 @@
     </p>
 
 
-<form
-    id="roadForm"
-    action="/submit-report"
-    method="POST"
-    enctype="multipart/form-data">
+    <!-- IMPORTANT:
+         enctype allows the image file
+         to be sent to Flask.
+    -->
+
+    <form
+        action="/submit-report"
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+
+        <!-- Road Photo -->
 
         <label for="photo">
-
             Upload Road Photo
-
         </label>
 
         <input
+            type="file"
+            id="photo"
+            name="photo"
+            accept="image/*"
+            required
+        >
 
-        type="file"
 
-        id="photo"
-
-        accept="image/*"
-
-        required>
-
+        <!-- Problem Type -->
 
         <label for="problem">
-
             Type of Road Problem
-
         </label>
 
         <select
-
-        id="problem"
-
-        required>
+            id="problem"
+            name="problem"
+            required
+        >
 
             <option value="">
-
                 Select a problem
-
             </option>
 
-            <option>
-
+            <option value="Pothole">
                 Pothole
-
             </option>
 
-            <option>
-
+            <option value="Cracked Road">
                 Cracked Road
-
             </option>
 
-            <option>
-
+            <option value="Waterlogging">
                 Waterlogging
-
             </option>
 
-            <option>
-
+            <option value="Damaged Road Surface">
                 Damaged Road Surface
-
             </option>
 
-            <option>
-
+            <option value="Other">
                 Other
-
             </option>
 
         </select>
 
 
+        <!-- Location -->
+
         <div class="location-box">
 
             <p>
-
                 📍 Location
-
             </p>
 
             <button
-
-            type="button"
-
-            class="location-button"
-
-            onclick="getLocation()">
-
+                type="button"
+                class="location-button"
+                onclick="getLocation()"
+            >
                 Use My Current Location
-
             </button>
 
             <p id="locationText">
-
                 Location not selected
-
             </p>
+
+            <input
+                type="hidden"
+                id="location"
+                name="location"
+            >
 
         </div>
 
 
+        <!-- Description -->
+
         <label for="description">
-
             Describe the Problem
-
         </label>
 
         <textarea
+            id="description"
+            name="description"
+            rows="5"
+            placeholder="Example: A large pothole is causing traffic problems..."
+            required
+        ></textarea>
 
-        id="description"
 
-        rows="5"
-
-        placeholder=
-        "Example: A large pothole is causing traffic problems..."
-
-        required>
-
-        </textarea>
-
+        <!-- Submit -->
 
         <button
-
-        type="submit"
-
-        class="submit-button">
-
+            type="submit"
+            class="submit-button"
+        >
             Submit Report for AI Analysis
-
         </button>
-
 
     </form>
 
 
-    <div
-
-    class="message"
-
-    id="successMessage">
-
-        ✅ Report submitted!
-        AI analysis will be shown next.
-
-    </div>
-
-
     <a
-
-    class="back"
-
-    href="/">
-
+        class="back"
+        href="/"
+    >
         ← Back to Home
-
     </a>
 
 </div>
@@ -371,81 +335,61 @@
 function getLocation() {
 
     const locationText =
-    document.getElementById(
-    "locationText"
-    );
+        document.getElementById("locationText");
 
-    if (
-    navigator.geolocation
-    ) {
+    const locationInput =
+        document.getElementById("location");
 
-        locationText.innerText =
-        "Getting location...";
 
-        navigator.geolocation
-        .getCurrentPosition(
+    if (!navigator.geolocation) {
+
+        locationText.textContent =
+            "Geolocation is not supported.";
+
+        return;
+    }
+
+
+    locationText.textContent =
+        "Getting your location...";
+
+
+    navigator.geolocation.getCurrentPosition(
 
         function(position) {
 
             const latitude =
-            position.coords.latitude;
+                position.coords.latitude;
 
             const longitude =
-            position.coords.longitude;
+                position.coords.longitude;
 
-            locationText.innerText =
-            "Location captured: " +
-            latitude.toFixed(5) +
-            ", " +
-            longitude.toFixed(5);
 
+            locationInput.value =
+                latitude + "," + longitude;
+
+
+            locationText.textContent =
+                "Location selected: "
+                + latitude
+                + ", "
+                + longitude;
         },
+
 
         function() {
 
-            locationText.innerText =
-            "Location permission was denied.";
+            locationText.textContent =
+                "Unable to get location.";
 
         }
 
-        );
-
-    } else {
-
-        locationText.innerText =
-        "Location is not supported.";
-
-    }
+    );
 
 }
-
-
-const roadForm =
-document.getElementById(
-"roadForm"
-);
-
-
-roadForm.addEventListener(
-
-"submit",
-
-function(event) {
-
-    
-
-    document
-    .getElementById(
-    "successMessage"
-    )
-    .style.display =
-    "block";
-
-}
-
-);
 
 </script>
+
 
 </body>
 

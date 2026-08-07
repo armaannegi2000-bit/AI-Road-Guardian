@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -17,20 +18,27 @@
 
         body {
             margin: 0;
+
             font-family: Arial, sans-serif;
 
             background:
-            linear-gradient(
-                135deg,
-                #eaf4ff,
-                #f7fbff
-            );
+                linear-gradient(
+                    135deg,
+                    #eaf4ff,
+                    #f7fbff
+                );
 
             color: #1f2937;
         }
 
+
+        /* =========================
+           HEADER
+        ========================= */
+
         header {
             background: #123b5d;
+
             color: white;
 
             padding: 20px;
@@ -43,17 +51,28 @@
         }
 
         header p {
-            margin-bottom: 0;
+            margin: 6px 0 0;
+
             opacity: 0.9;
         }
 
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
         .container {
-            max-width: 900px;
+            max-width: 1000px;
 
             margin: 35px auto;
 
             padding: 20px;
         }
+
+
+        /* =========================
+           CARD
+        ========================= */
 
         .analysis-card {
             background: white;
@@ -63,9 +82,14 @@
             padding: 30px;
 
             box-shadow:
-            0 8px 25px
-            rgba(0, 0, 0, 0.12);
+                0 8px 25px
+                rgba(0, 0, 0, 0.12);
         }
+
+
+        /* =========================
+           STATUS
+        ========================= */
 
         .status {
             text-align: center;
@@ -80,73 +104,238 @@
 
             font-weight: bold;
 
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+
+            font-size: 17px;
         }
+
+
+        /* =========================
+           COMPLAINT ID
+        ========================= */
+
+        .complaint-id {
+            background: #eef6ff;
+
+            color: #164e7a;
+
+            padding: 12px 16px;
+
+            border-radius: 8px;
+
+            margin-bottom: 25px;
+
+            font-weight: bold;
+        }
+
+
+        /* =========================
+           TITLE
+        ========================= */
+
+        .ai-title {
+            color: #123b5d;
+
+            font-size: 24px;
+
+            margin-bottom: 22px;
+        }
+
+
+        /* =========================
+           RESULT GRID
+        ========================= */
 
         .result-grid {
             display: grid;
 
             grid-template-columns:
-            repeat(
-                auto-fit,
-                minmax(200px, 1fr)
-            );
+                repeat(
+                    auto-fit,
+                    minmax(220px, 1fr)
+                );
 
-            gap: 18px;
+            gap: 20px;
         }
+
+
+        /* =========================
+           RESULT BOX
+        ========================= */
 
         .result-box {
-            background: #f4f8fc;
+            background: #f7faff;
 
             border-left:
-            6px solid #1976d2;
+                6px solid #1976d2;
 
-            padding: 20px;
+            padding: 22px;
 
-            border-radius: 8px;
+            border-radius: 9px;
+
+            min-height: 145px;
+
+            box-shadow:
+                0 3px 10px
+                rgba(0, 0, 0, 0.05);
         }
+
+
+        /* =========================
+           FIELD NAME
+        ========================= */
 
         .result-box h3 {
+
             margin-top: 0;
 
-            color: #123b5d;
+            margin-bottom: 18px;
+
+            color: #64748b;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.8px;
         }
 
-        .high {
-            color: #c62828;
 
-            font-size: 22px;
+        /* =========================
+           AI VALUE
+        ========================= */
 
-            font-weight: bold;
+        .value {
+
+            margin: 0;
+
+            font-size: 24px;
+
+            font-weight: 700;
+
+            line-height: 1.4;
         }
 
-        .medium {
+
+        /* =========================
+           ROAD DAMAGE
+        ========================= */
+
+        .damage-value {
+
+            color: #1976d2;
+        }
+
+
+        /* =========================
+           ESTIMATED DEPTH
+        ========================= */
+
+        .depth-value {
+
+            color: #263238;
+
+            font-size: 20px;
+        }
+
+
+        /* =========================
+           PRIORITY
+        ========================= */
+
+        .priority-high {
+
+            color: #d32f2f;
+        }
+
+        .priority-medium {
+
             color: #ef6c00;
-
-            font-size: 22px;
-
-            font-weight: bold;
         }
+
+        .priority-low {
+
+            color: #2e7d32;
+        }
+
+
+        /* =========================
+           POSSIBLE CAUSE
+        ========================= */
+
+        .cause-value {
+
+            color: #5e35b1;
+
+            font-size: 19px;
+
+            line-height: 1.5;
+        }
+
+
+        /* =========================
+           RECOMMENDATION
+        ========================= */
 
         .details {
-            margin-top: 25px;
+
+            margin-top: 30px;
 
             background: #fff8e1;
 
-            padding: 20px;
+            padding: 25px;
 
             border-radius: 10px;
+
+            border-left:
+                6px solid #f59e0b;
         }
+
+        .details h2 {
+
+            margin-top: 0;
+
+            color: #7c4a03;
+
+            font-size: 23px;
+        }
+
+        .details p {
+
+            color: #4b5563;
+
+            font-size: 17px;
+
+            line-height: 1.6;
+
+            margin-bottom: 0;
+        }
+
+
+        /* =========================
+           NOTE
+        ========================= */
 
         .note {
-            margin-top: 20px;
 
-            color: #555;
+            margin-top: 22px;
+
+            color: #64748b;
 
             font-size: 14px;
+
+            line-height: 1.5;
         }
 
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
         .buttons {
+
             display: flex;
 
             gap: 15px;
@@ -157,6 +346,7 @@
         }
 
         .button {
+
             display: inline-block;
 
             padding: 13px 20px;
@@ -166,180 +356,293 @@
             text-decoration: none;
 
             font-weight: bold;
+
+            transition:
+                transform 0.2s ease,
+                opacity 0.2s ease;
         }
 
         .primary {
+
             background: #1976d2;
 
             color: white;
         }
 
         .secondary {
+
             background: #e5e7eb;
 
             color: #1f2937;
         }
 
         .button:hover {
-            opacity: 0.85;
+
+            opacity: 0.9;
+
+            transform:
+                translateY(-2px);
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .container {
+
+                margin: 15px auto;
+
+                padding: 10px;
+            }
+
+            .analysis-card {
+
+                padding: 20px;
+            }
+
+            .result-grid {
+
+                grid-template-columns: 1fr;
+            }
+
+            .buttons {
+
+                flex-direction: column;
+            }
+
+            .button {
+
+                text-align: center;
+
+                width: 100%;
+            }
         }
 
     </style>
+
 </head>
+
 
 <body>
 
-<header>
 
-    <h1>
-        🤖 AI Road Analysis
-    </h1>
+    <!-- =========================
+         HEADER
+    ========================= -->
 
-    <p>
-        AI Road Guardian
-    </p>
+    <header>
 
-</header>
+        <h1>
+            🤖 AI Road Analysis
+        </h1>
 
+        <p>
+            AI Road Guardian
+        </p>
 
-<div class="container">
-
-    <div class="analysis-card">
-
-        <div class="status">
-
-            ✅ Road report received.
-            AI analysis completed.
-
-        </div>
+    </header>
 
 
-        <div class="result-grid">
+    <!-- =========================
+         MAIN
+    ========================= -->
 
-            <div class="result-box">
+    <div class="container">
 
-                <h3>
-                    Road Damage
-                </h3>
+        <div class="analysis-card">
 
-                <p class="high">
 
-                    Severe
+            <!-- STATUS -->
 
-                </p>
+            <div class="status">
+
+                ✅ Road report received.
+                AI analysis completed.
 
             </div>
 
 
-            <div class="result-box">
+            <!-- COMPLAINT ID -->
 
-                <h3>
-                    Estimated Depth
-                </h3>
+            <div class="complaint-id">
 
-                <p>
-
-                    8–12 cm
-
-                </p>
+                Complaint ID:
+                {{ complaint_id }}
 
             </div>
 
 
-            <div class="result-box">
+            <!-- TITLE -->
 
-                <h3>
-                    Priority Level
-                </h3>
+            <h2 class="ai-title">
 
-                <p class="high">
+                AI Analysis
 
-                    High
-
-                </p>
-
-            </div>
-
-
-            <div class="result-box">
-
-                <h3>
-                    Possible Cause
-                </h3>
-
-                <p>
-
-                    Water damage and
-                    surface wear
-
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="details">
-
-            <h2>
-                AI Recommendation
             </h2>
 
-            <p>
 
-                This road issue should
-                be inspected by an
-                engineer. Temporary
-                safety marking is
-                recommended until
-                repair work begins.
+            <!-- =========================
+                 AI RESULTS
+            ========================= -->
+
+            <div class="result-grid">
+
+
+                <!-- ROAD DAMAGE -->
+
+                <div class="result-box">
+
+                    <h3>
+                        Road Damage
+                    </h3>
+
+                    <p class="value damage-value">
+
+                        {{ ai_result.issue_type }}
+
+                    </p>
+
+                </div>
+
+
+                <!-- ESTIMATED DEPTH -->
+
+                <div class="result-box">
+
+                    <h3>
+                        Estimated Depth
+                    </h3>
+
+                    <p class="value depth-value">
+
+                        {{ ai_result.estimated_depth }}
+
+                    </p>
+
+                </div>
+
+
+                <!-- PRIORITY -->
+
+                <div class="result-box">
+
+                    <h3>
+                        Priority Level
+                    </h3>
+
+                    <p class="value
+                    {% if ai_result.priority|lower == 'high' %}
+                        priority-high
+                    {% elif ai_result.priority|lower == 'medium' %}
+                        priority-medium
+                    {% else %}
+                        priority-low
+                    {% endif %}
+                    ">
+
+                        {{ ai_result.priority }}
+
+                    </p>
+
+                </div>
+
+
+                <!-- POSSIBLE CAUSE -->
+
+                <div class="result-box">
+
+                    <h3>
+                        Possible Cause
+                    </h3>
+
+                    <p class="value cause-value">
+
+                        {{ ai_result.possible_cause }}
+
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =========================
+                 AI RECOMMENDATION
+            ========================= -->
+
+            <div class="details">
+
+                <h2>
+                    AI Recommendation
+                </h2>
+
+                <p>
+
+                    {{ ai_result.recommendation }}
+
+                </p>
+
+            </div>
+
+
+            <!-- =========================
+                 NOTE
+            ========================= -->
+
+            <p class="note">
+
+                ⚠️ AI-generated analysis is based on
+                the uploaded road image. Authorities
+                should verify the condition through
+                physical inspection before taking
+                repair decisions.
 
             </p>
 
-        </div>
+
+            <!-- =========================
+                 BUTTONS
+            ========================= -->
+
+            <div class="buttons">
+
+                <a
+                    href="/report"
+                    class="button primary">
+
+                    Report Another Problem
+
+                </a>
 
 
-        <p class="note">
+                <a
+                    href="/track?id={{ complaint_id }}"
+                    class="button primary">
 
-            ⚠️ This is a prototype
-            AI result. The values are
-            currently demo estimates.
-            A real AI model can be
-            connected later.
+                    Track My Complaint
 
-        </p>
+                </a>
 
 
-        <div class="buttons">
+                <a
+                    href="/"
+                    class="button secondary">
 
-            <a
-            href="/report"
-            class="button primary">
+                    Back to Home
 
-                Report Another Problem
+                </a>
 
-            </a>
-<a
-    href="/track"
-    class="button primary">
+            </div>
 
-    Track My Complaint
-
-</a>
-
-            <a
-            href="/"
-            class="button secondary">
-
-                Back to Home
-
-            </a>
 
         </div>
 
     </div>
 
-</div>
 
 </body>
 

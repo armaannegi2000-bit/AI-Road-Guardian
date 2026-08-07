@@ -1,4 +1,5 @@
 .env
-config.env
-183.env
 __pycache__/
+*.pyc
+road_guardian.db
+static/uploads/
