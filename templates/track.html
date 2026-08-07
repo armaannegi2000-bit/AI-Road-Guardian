@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -10,6 +11,7 @@
     <title>
         Track Complaint | AI Road Guardian
     </title>
+
 
     <style>
 
@@ -20,6 +22,7 @@
             color: #1f2937;
         }
 
+
         header {
             background: #123b5d;
             color: white;
@@ -27,89 +30,187 @@
             padding: 25px;
         }
 
+
+        header h1 {
+            margin: 0;
+        }
+
+
+        header p {
+            margin-bottom: 0;
+            opacity: 0.85;
+        }
+
+
         .container {
             max-width: 750px;
             margin: 40px auto;
             padding: 20px;
         }
 
+
         .card {
             background: white;
             padding: 30px;
             border-radius: 15px;
+
             box-shadow:
                 0 8px 25px
                 rgba(0, 0, 0, 0.12);
         }
 
+
         h2 {
             color: #123b5d;
         }
+
 
         input {
             width: 100%;
             padding: 14px;
             margin: 15px 0;
+
             border:
                 1px solid #cbd5e1;
+
             border-radius: 8px;
+
             font-size: 16px;
+
             box-sizing: border-box;
         }
+
 
         button {
             background: #1976d2;
             color: white;
             border: none;
+
             padding: 13px 20px;
+
             border-radius: 8px;
+
             font-size: 16px;
+
             cursor: pointer;
         }
+
 
         button:hover {
             opacity: 0.85;
         }
 
+
         .status-box {
-            display: none;
             margin-top: 25px;
             padding: 20px;
+
             background: #f1f8ff;
+
             border-left:
                 6px solid #1976d2;
+
             border-radius: 8px;
         }
+
 
         .step {
             padding: 12px;
             margin: 10px 0;
+
             background: white;
+
             border-radius: 7px;
+
+            border: 1px solid #e2e8f0;
         }
+
 
         .completed {
             color: #16803c;
             font-weight: bold;
         }
 
+
         .progress {
             color: #e66a00;
             font-weight: bold;
         }
 
-        .home-link {
-            display: inline-block;
-            margin-top: 25px;
-            color: #123b5d;
-            text-decoration: none;
+
+        .pending {
+            color: #3730a3;
             font-weight: bold;
         }
 
+
+        .not-found {
+            margin-top: 25px;
+
+            padding: 18px;
+
+            background: #fff1f2;
+
+            border-left:
+                6px solid #dc2626;
+
+            border-radius: 8px;
+
+            color: #991b1b;
+
+            display: none;
+        }
+
+
+        .home-link {
+            display: inline-block;
+
+            margin-top: 25px;
+
+            color: #123b5d;
+
+            text-decoration: none;
+
+            font-weight: bold;
+        }
+
+
+        .report-info {
+            background: white;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            margin-bottom: 15px;
+        }
+
+
+        .report-info strong {
+            color: #123b5d;
+        }
+
+
+        @media (max-width: 700px) {
+
+            .container {
+                margin: 20px auto;
+                padding: 15px;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+        }
+
     </style>
+
 </head>
 
+
 <body>
+
 
 <header>
 
@@ -126,21 +227,28 @@
 
 <div class="container">
 
+
     <div class="card">
+
 
         <h2>
             Check Your Road Report
         </h2>
+
 
         <p>
             Enter your complaint ID
             to see its current status.
         </p>
 
+
         <input
             id="complaintId"
             type="text"
-            placeholder="Example: RG-1001">
+            placeholder="Example: RG-1001"
+            autocomplete="off"
+        >
+
 
         <button
             onclick="trackComplaint()">
@@ -150,22 +258,72 @@
         </button>
 
 
+        <!-- NOT FOUND MESSAGE -->
+
+        <div
+            class="not-found"
+            id="notFound">
+
+            <strong>
+                Complaint not found
+            </strong>
+
+            <p>
+                Please check the complaint ID
+                and try again.
+            </p>
+
+        </div>
+
+
+        <!-- STATUS RESULT -->
+
         <div
             class="status-box"
-            id="statusBox">
+            id="statusBox"
+            style="display: none;">
+
 
             <h2>
                 Complaint Status
             </h2>
 
-            <p>
 
-                Complaint ID:
-                <strong>
-                    RG-1001
-                </strong>
+            <div class="report-info">
 
-            </p>
+                <p>
+
+                    Complaint ID:
+                    <strong id="displayId">
+                        -
+                    </strong>
+
+                </p>
+
+
+                <p>
+
+                    Location:
+                    <strong id="displayLocation">
+                        -
+                    </strong>
+
+                </p>
+
+
+                <p>
+
+                    AI Priority:
+                    <strong id="displayPriority">
+                        -
+                    </strong>
+
+                </p>
+
+            </div>
+
+
+            <!-- REPORT RECEIVED -->
 
             <div class="step">
 
@@ -177,6 +335,9 @@
 
             </div>
 
+
+            <!-- AI ANALYSIS -->
+
             <div class="step">
 
                 <span class="completed">
@@ -187,25 +348,49 @@
 
             </div>
 
-            <div class="step">
 
-                <div class="step">
+            <!-- ENGINEER STATUS -->
 
-    Current Status:
+            <div
+                class="step"
+                id="engineerStep">
 
-    <strong>
-        {{ complaint["status"] }}
-    </strong>
+                <span id="engineerStatus">
 
-</div>
-            </div>
+                    ⏳ Engineer Assignment Pending
 
-            <div class="step">
-
-                Repair Work:
-                Pending
+                </span>
 
             </div>
+
+
+            <!-- REPAIR STATUS -->
+
+            <div
+                class="step"
+                id="repairStep">
+
+                <span id="repairStatus">
+
+                    ⏳ Repair Work Pending
+
+                </span>
+
+            </div>
+
+
+            <!-- CURRENT STATUS -->
+
+            <div class="step">
+
+                Current Status:
+
+                <strong id="currentStatus">
+                    -
+                </strong>
+
+            </div>
+
 
         </div>
 
@@ -218,40 +403,304 @@
 
         </a>
 
+
     </div>
+
 
 </div>
 
 
 <script>
 
-function trackComplaint() {
+async function trackComplaint() {
 
-    const complaintId =
+
+    const input =
         document.getElementById(
             "complaintId"
-        ).value;
-
-    if (
-        complaintId.trim() === ""
-    ) {
-
-        alert(
-            "Please enter a Complaint ID."
         );
 
+
+    const complaintId =
+        input.value
+        .trim()
+        .toUpperCase();
+
+
+    const statusBox =
+        document.getElementById(
+            "statusBox"
+        );
+
+
+    const notFound =
+        document.getElementById(
+            "notFound"
+        );
+
+
+    /* Reset */
+
+    statusBox.style.display =
+        "none";
+
+    notFound.style.display =
+        "none";
+
+
+    if (!complaintId) {
+
+        notFound.style.display =
+            "block";
+
+        notFound.querySelector(
+            "strong"
+        ).textContent =
+            "Please enter a complaint ID";
+
+        notFound.querySelector(
+            "p"
+        ).textContent =
+            "Example: RG-1001";
+
         return;
+
     }
 
-    document
-        .getElementById(
-            "statusBox"
-        )
-        .style.display = "block";
+
+    try {
+
+
+        const response =
+            await fetch(
+                "/track-status/" +
+                encodeURIComponent(
+                    complaintId
+                )
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+
+            notFound.style.display =
+                "block";
+
+
+            notFound.querySelector(
+                "strong"
+            ).textContent =
+                "Complaint not found";
+
+
+            notFound.querySelector(
+                "p"
+            ).textContent =
+                "Please check the complaint ID and try again.";
+
+
+            return;
+
+        }
+
+
+        const complaint =
+            data.complaint;
+
+
+        /* Basic information */
+
+        document.getElementById(
+            "displayId"
+        ).textContent =
+            complaintId;
+
+
+        document.getElementById(
+            "displayLocation"
+        ).textContent =
+            complaint.location ||
+            "Location not provided";
+
+
+        document.getElementById(
+            "displayPriority"
+        ).textContent =
+            complaint.priority ||
+            "Not available";
+
+
+        document.getElementById(
+            "currentStatus"
+        ).textContent =
+            complaint.status ||
+            "Pending";
+
+
+        /* Status */
+
+        const status =
+            complaint.status;
+
+
+        const engineerStatus =
+            document.getElementById(
+                "engineerStatus"
+            );
+
+
+        const repairStatus =
+            document.getElementById(
+                "repairStatus"
+            );
+
+
+        engineerStatus.className = "";
+        repairStatus.className = "";
+
+
+        if (status === "Pending") {
+
+
+            engineerStatus.textContent =
+                "⏳ Engineer Assignment Pending";
+
+            engineerStatus.className =
+                "pending";
+
+
+            repairStatus.textContent =
+                "⏳ Repair Work Pending";
+
+            repairStatus.className =
+                "pending";
+
+
+        }
+
+
+        else if (
+            status ===
+            "Engineer Assigned"
+        ) {
+
+
+            engineerStatus.textContent =
+                "✓ Engineer Assigned";
+
+            engineerStatus.className =
+                "completed";
+
+
+            repairStatus.textContent =
+                "⏳ Repair Work Pending";
+
+            repairStatus.className =
+                "pending";
+
+
+        }
+
+
+        else if (
+            status ===
+            "In Progress"
+        ) {
+
+
+            engineerStatus.textContent =
+                "✓ Engineer Assigned";
+
+            engineerStatus.className =
+                "completed";
+
+
+            repairStatus.textContent =
+                "🔧 Repair Work In Progress";
+
+            repairStatus.className =
+                "progress";
+
+
+        }
+
+
+        else if (
+            status ===
+            "Completed"
+        ) {
+
+
+            engineerStatus.textContent =
+                "✓ Engineer Assigned";
+
+            engineerStatus.className =
+                "completed";
+
+
+            repairStatus.textContent =
+                "✓ Repair Completed";
+
+            repairStatus.className =
+                "completed";
+
+
+        }
+
+
+        else {
+
+
+            engineerStatus.textContent =
+                "Current status: " +
+                status;
+
+
+            repairStatus.textContent =
+                "Current status: " +
+                status;
+
+        }
+
+
+        statusBox.style.display =
+            "block";
+
+
+    }
+
+
+    catch (error) {
+
+
+        console.error(error);
+
+
+        notFound.style.display =
+            "block";
+
+
+        notFound.querySelector(
+            "strong"
+        ).textContent =
+            "Unable to check complaint";
+
+
+        notFound.querySelector(
+            "p"
+        ).textContent =
+            "Please try again.";
+
+    }
 
 }
 
 </script>
+
 
 </body>
 

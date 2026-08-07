@@ -7,7 +7,6 @@ import uuid
 
 load_dotenv()
 
-
 # =========================================================
 # GEMINI SETUP
 # =========================================================
@@ -20,7 +19,6 @@ if GEMINI_API_KEY:
 else:
     print("WARNING: GEMINI_API_KEY not found.")
     client = None
-
 
 # =========================================================
 # FLASK SETUP
@@ -36,19 +34,84 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 # =========================================================
 # COMPLAINT DATA
 # =========================================================
+# RG SYSTEM
+#
+# Every RG uses the same structure.
+# New reports are automatically added.
+# Every RG can have its own status.
+# =========================================================
 
 complaints = {
+
     "RG-1001": {
         "location": "Main Market Road",
         "description": "Large pothole on the road",
         "priority": "High",
         "status": "Pending"
+    },
+
+    "RG-1002": {
+        "location": "School Road",
+        "description": "Road surface damage",
+        "priority": "Medium",
+        "status": "In Progress"
+    },
+
+    "RG-1003": {
+        "location": "Bus Stand Road",
+        "description": "Road condition requires inspection",
+        "priority": "Low",
+        "status": "Completed"
     }
+
 }
+
+# =========================================================
+# RG STATUS SETTINGS
+# =========================================================
+
+ALLOWED_STATUSES = [
+    "Pending",
+    "Engineer Assigned",
+    "In Progress",
+    "Completed"
+]
+
+# =========================================================
+# CREATE NEXT RG ID
+# =========================================================
+
+def create_complaint_id():
+
+    numbers = []
+
+    for complaint_id in complaints.keys():
+
+        if complaint_id.startswith("RG-"):
+
+            try:
+
+                number = int(
+                    complaint_id.replace(
+                        "RG-",
+                        ""
+                    )
+                )
+
+                numbers.append(number)
+
+            except ValueError:
+                pass
+
+    if not numbers:
+        return "RG-1001"
+
+    next_number = max(numbers) + 1
+
+    return f"RG-{next_number}"
 
 
 # =========================================================
@@ -57,8 +120,10 @@ complaints = {
 
 @app.route("/")
 def home():
-    return render_template("index.html")
 
+    return render_template(
+        "index.html"
+    )
 
 # =========================================================
 # REPORT PAGE
@@ -66,8 +131,10 @@ def home():
 
 @app.route("/report")
 def report():
-    return render_template("report.html")
 
+    return render_template(
+        "report.html"
+    )
 
 # =========================================================
 # GEMINI ROAD IMAGE ANALYSIS
@@ -211,11 +278,11 @@ IMPORTANT RULES:
 Return exactly this structure:
 
 {
-    "issue_type": "",
-    "estimated_depth": "",
-    "priority": "",
-    "possible_cause": "",
-    "recommendation": ""
+"issue_type": "",
+"estimated_depth": "",
+"priority": "",
+"possible_cause": "",
+"recommendation": ""
 }
 """
 
@@ -279,7 +346,12 @@ Return exactly this structure:
             ai_result["priority"]
         ).strip().capitalize()
 
-        if priority not in ["Low", "Medium", "High"]:
+        if priority not in [
+            "Low",
+            "Medium",
+            "High"
+        ]:
+
             priority = "Medium"
 
         ai_result["priority"] = priority
@@ -379,23 +451,36 @@ def submit_report():
         photo_path
     )
 
-    # Create complaint ID
-    complaint_id = (
-        f"RG-{1001 + len(complaints)}"
+    # =====================================================
+    # RG CREATION
+    # =====================================================
+
+    complaint_id = create_complaint_id()
+
+    # Get form values
+    location = request.form.get(
+        "location",
+        "Location not provided"
+    )
+
+    problem = request.form.get(
+        "problem",
+        "Road problem reported"
+    )
+
+    description = request.form.get(
+        "description",
+        "Road problem reported"
     )
 
     # Store complaint
     complaints[complaint_id] = {
 
-        "location": request.form.get(
-            "location",
-            "Location not provided"
-        ),
+        "location": location,
 
-        "description": request.form.get(
-            "description",
-            "Road problem reported"
-        ),
+        "problem": problem,
+
+        "description": description,
 
         "priority": ai_result["priority"],
 
@@ -414,6 +499,10 @@ def submit_report():
     print(
         "Priority:",
         ai_result["priority"]
+    )
+
+    print(
+        "Status: Pending"
     )
 
     print("========================================")
@@ -486,6 +575,7 @@ def analysis():
 
 # =========================================================
 # TRACK COMPLAINT
+
 # =========================================================
 
 @app.route("/track")
@@ -508,6 +598,30 @@ def track():
 
         complaint=complaint
     )
+
+
+# =========================================================
+# TRACK COMPLAINT STATUS API
+# =========================================================
+
+@app.route("/track-status/<complaint_id>")
+def track_status(complaint_id):
+
+    complaint_id = complaint_id.upper()
+
+    complaint = complaints.get(complaint_id)
+
+    if not complaint:
+
+        return jsonify({
+            "success": False,
+            "message": "Complaint not found"
+        })
+
+    return jsonify({
+        "success": True,
+        "complaint": complaint
+    })
 
 
 # =========================================================
@@ -592,6 +706,16 @@ def dashboard():
 # =========================================================
 # UPDATE STATUS
 # =========================================================
+# THIS NOW WORKS FOR EVERY RG
+#
+# Example:
+#
+# /update-status/RG-1001
+# /update-status/RG-1002
+# /update-status/RG-1003
+# /update-status/RG-1004
+#
+# =========================================================
 
 @app.route(
     "/update-status/<complaint_id>",
@@ -599,12 +723,43 @@ def dashboard():
 )
 def update_status(complaint_id):
 
+    if not session.get(
+        "government_logged_in"
+    ):
+
+        return redirect(
+            "/government-login"
+        )
+
+    status = request.form.get(
+        "status"
+    )
+
+    if status not in ALLOWED_STATUSES:
+
+        print(
+            "Invalid status received:",
+            status
+        )
+
+        return redirect(
+            url_for("dashboard")
+        )
+
     if complaint_id in complaints:
 
         complaints[
             complaint_id
-        ]["status"] = request.form.get(
-            "status"
+        ]["status"] = status
+
+        print(
+            f"{complaint_id} status updated to: {status}"
+        )
+
+    else:
+
+        print(
+            f"RG not found: {complaint_id}"
         )
 
     return redirect(
