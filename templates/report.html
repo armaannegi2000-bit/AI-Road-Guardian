@@ -3,185 +3,793 @@
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
-    <title>Report a Road Problem | AI Road Guardian</title>
+<title>Report a Road Problem | AI Road Guardian</title>
 
-    <style>
+<style>
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        body {
-            font-family: Arial, sans-serif;
+body {
+    font-family: Arial, sans-serif;
 
-            background:
-            linear-gradient(
-                135deg,
-                #e8f4f8,
-                #d9eaf7
-            );
+    background:
+    linear-gradient(
+        135deg,
+        #e8f4f8,
+        #d9eaf7
+    );
 
-            min-height: 100vh;
+    min-height: 100vh;
 
-            padding: 40px 15px;
-        }
+    padding: 40px 15px;
 
-        .container {
+    color: #1f2937;
+}
 
-            max-width: 700px;
+.container {
 
-            margin: auto;
+    max-width: 700px;
 
-            background-color: white;
+    margin: auto;
 
-            padding: 35px;
+    background: white;
 
-            border-radius: 15px;
+    padding: 35px;
 
-            box-shadow:
-            0 8px 25px
-            rgba(0, 0, 0, 0.15);
-        }
+    border-radius: 15px;
 
-        h1 {
+    box-shadow:
+    0 8px 25px
+    rgba(0, 0, 0, 0.15);
+}
 
-            text-align: center;
+h1 {
 
-            color: #123b5d;
+    text-align: center;
 
-            margin-bottom: 10px;
-        }
+    color: #123b5d;
 
-        .subtitle {
+    margin-bottom: 10px;
+}
 
-            text-align: center;
+.subtitle {
 
-            color: #666;
+    text-align: center;
 
-            margin-bottom: 30px;
+    color: #666;
 
-            line-height: 1.5;
-        }
+    margin-bottom: 30px;
 
-        label {
+    line-height: 1.5;
+}
 
-            display: block;
+label {
 
-            font-weight: bold;
+    display: block;
 
-            color: #333;
+    font-weight: bold;
 
-            margin-top: 18px;
+    color: #333;
 
-            margin-bottom: 8px;
-        }
+    margin-top: 18px;
 
-        input,
-        textarea,
-        select {
+    margin-bottom: 8px;
+}
 
-            width: 100%;
+input,
+textarea,
+select {
 
-            padding: 13px;
+    width: 100%;
 
-            border:
-            1px solid #b8c2cc;
+    padding: 13px;
 
-            border-radius: 8px;
+    border:
+    1px solid #b8c2cc;
 
-            font-size: 16px;
-        }
+    border-radius: 8px;
 
-        textarea {
+    font-size: 16px;
 
-            resize: vertical;
-        }
+    background: #fff;
+}
 
-        .location-box {
+input:focus,
+textarea:focus,
+select:focus {
 
-            background-color: #eef8f5;
+    outline: none;
 
-            padding: 15px;
+    border-color: #1976d2;
 
-            border-radius: 10px;
+    box-shadow:
+    0 0 0 3px
+    rgba(25,118,210,0.10);
+}
 
-            margin-top: 18px;
-        }
+textarea {
+    resize: vertical;
+}
 
-        .location-box p {
+.location-box {
 
-            margin-bottom: 10px;
-        }
+    background-color: #eef8f5;
 
-        .location-button {
+    padding: 15px;
 
-            padding: 10px 15px;
+    border-radius: 10px;
 
-            background-color: #167a67;
+    margin-top: 18px;
+}
 
-            color: white;
+.location-box p {
+    margin-bottom: 10px;
+}
 
-            border: none;
+.location-button {
 
-            border-radius: 7px;
+    padding: 10px 15px;
 
-            cursor: pointer;
-        }
+    background-color: #167a67;
 
-        .submit-button {
+    color: white;
 
-            width: 100%;
+    border: none;
 
-            margin-top: 25px;
+    border-radius: 7px;
 
-            padding: 15px;
+    cursor: pointer;
+}
 
-            background-color: #0b5d8c;
+.location-button:hover {
+    background-color: #116352;
+}
 
-            color: white;
+.submit-button {
 
-            border: none;
+    width: 100%;
 
-            border-radius: 8px;
+    margin-top: 25px;
 
-            font-size: 17px;
+    padding: 15px;
 
-            font-weight: bold;
+    background:
+    linear-gradient(
+        135deg,
+        #0b5d8c,
+        #123b5d
+    );
 
-            cursor: pointer;
-        }
+    color: white;
 
-        .submit-button:hover {
+    border: none;
 
-            background-color: #08476b;
-        }
+    border-radius: 8px;
 
-        .back {
+    font-size: 17px;
 
-            display: block;
+    font-weight: bold;
 
-            text-align: center;
+    cursor: pointer;
 
-            margin-top: 22px;
+    transition: 0.25s;
+}
 
-            color: #123b5d;
+.submit-button:hover {
 
-            text-decoration: none;
-        }
+    transform: translateY(-2px);
 
-    </style>
+    box-shadow:
+    0 7px 18px
+    rgba(11,93,140,0.3);
+}
+
+.submit-button:disabled {
+
+    opacity: 0.7;
+
+    cursor: not-allowed;
+}
+
+.back {
+
+    display: block;
+
+    text-align: center;
+
+    margin-top: 22px;
+
+    color: #123b5d;
+
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   AI ANALYSIS OVERLAY
+========================================================= */
+
+.ai-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99999;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+    linear-gradient(
+        135deg,
+        rgba(232,244,248,0.98),
+        rgba(217,234,247,0.99)
+    );
+
+    color: #123b5d;
+}
+
+.ai-overlay.active {
+    display: flex;
+}
+
+
+/* Soft background glow */
+
+.ai-glow {
+
+    position: absolute;
+
+    width: 520px;
+
+    height: 520px;
+
+    border-radius: 50%;
+
+    background:
+    radial-gradient(
+        circle,
+        rgba(25,118,210,0.16),
+        rgba(25,118,210,0.05) 45%,
+        transparent 70%
+    );
+
+    animation:
+    glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+
+    0%,100% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: scale(1.12);
+        opacity: 1;
+    }
+}
+
+
+/* Subtle technical grid */
+
+.ai-grid {
+
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0.16;
+
+    background-image:
+
+        linear-gradient(
+            rgba(18,59,93,0.12) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(18,59,93,0.12) 1px,
+            transparent 1px
+        );
+
+    background-size: 45px 45px;
+
+    mask-image:
+    linear-gradient(
+        to bottom,
+        transparent,
+        black 25%,
+        black 75%,
+        transparent
+    );
+}
+
+
+/* Main content */
+
+.ai-content {
+
+    position: relative;
+
+    z-index: 5;
+
+    width: min(92%, 620px);
+
+    text-align: center;
+}
+
+
+/* Branding */
+
+.ai-brand {
+
+    color: #123b5d;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    letter-spacing: 3px;
+
+    margin-bottom: 28px;
+}
+
+.ai-brand span {
+
+    color: #1976d2;
+}
+
+
+/* =========================================================
+   AI CORE
+========================================================= */
+
+.ai-core {
+
+    position: relative;
+
+    width: 190px;
+
+    height: 190px;
+
+    margin: auto;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+
+/* Outer ring */
+
+.ring-one {
+
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 50%;
+
+    border:
+    3px solid
+    rgba(18,59,93,0.10);
+
+    border-top-color: #123b5d;
+
+    border-right-color: #1976d2;
+
+    animation:
+    rotateOne 3s linear infinite;
+}
+
+
+/* Middle ring */
+
+.ring-two {
+
+    position: absolute;
+
+    inset: 20px;
+
+    border-radius: 50%;
+
+    border:
+    2px solid
+    rgba(25,118,210,0.15);
+
+    border-bottom-color: #1976d2;
+
+    border-left-color: #0b5d8c;
+
+    animation:
+    rotateTwo 2s linear infinite;
+}
+
+
+/* Inner ring */
+
+.ring-three {
+
+    position: absolute;
+
+    inset: 42px;
+
+    border-radius: 50%;
+
+    border:
+    2px dashed
+    rgba(18,59,93,0.35);
+
+    animation:
+    rotateOne 1.5s linear infinite;
+}
+
+@keyframes rotateOne {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rotateTwo {
+
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+
+/* Center */
+
+.core-center {
+
+    width: 70px;
+
+    height: 70px;
+
+    border-radius: 50%;
+
+    background:
+    linear-gradient(
+        135deg,
+        #123b5d,
+        #1976d2
+    );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: white;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    box-shadow:
+
+    0 0 0 8px
+    rgba(25,118,210,0.08),
+
+    0 0 25px
+    rgba(25,118,210,0.35);
+
+    animation:
+    corePulse 1.7s ease-in-out infinite;
+}
+
+.core-center::after {
+    content: "AI";
+}
+
+@keyframes corePulse {
+
+    0%,100% {
+        transform: scale(0.92);
+    }
+
+    50% {
+        transform: scale(1.07);
+    }
+}
+
+
+/* Scanning line */
+
+.scan-beam {
+
+    position: absolute;
+
+    left: 25px;
+
+    right: 25px;
+
+    height: 3px;
+
+    border-radius: 10px;
+
+    background:
+    linear-gradient(
+        90deg,
+        transparent,
+        #1976d2,
+        white,
+        #1976d2,
+        transparent
+    );
+
+    box-shadow:
+    0 0 8px
+    rgba(25,118,210,0.8);
+
+    animation:
+    scan 2.2s ease-in-out infinite;
+}
+
+@keyframes scan {
+
+    0% {
+        top: 18%;
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        top: 82%;
+        opacity: 0;
+    }
+}
+
+
+/* Orbit dots */
+
+.orbit-dot {
+
+    position: absolute;
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #1976d2;
+
+    box-shadow:
+    0 0 8px
+    rgba(25,118,210,0.7);
+}
+
+.dot-one {
+    top: 8px;
+    left: 92px;
+}
+
+.dot-two {
+    right: 10px;
+    top: 92px;
+}
+
+.dot-three {
+    bottom: 8px;
+    left: 92px;
+}
+
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+.ai-title {
+
+    margin-top: 30px;
+
+    margin-bottom: 10px;
+
+    font-size: 30px;
+
+    color: #123b5d;
+}
+
+.ai-subtitle {
+
+    min-height: 26px;
+
+    font-size: 16px;
+
+    color: #526777;
+
+    transition:
+    opacity 0.25s ease;
+}
+
+
+/* Progress */
+
+.progress-container {
+
+    margin-top: 32px;
+
+    text-align: left;
+}
+
+.progress-info {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+
+    font-size: 12px;
+
+    font-weight: bold;
+
+    color: #5c7180;
+
+    letter-spacing: 1px;
+}
+
+.progress-track {
+
+    width: 100%;
+
+    height: 7px;
+
+    border-radius: 20px;
+
+    background:
+    rgba(18,59,93,0.12);
+
+    overflow: hidden;
+}
+
+.progress-bar {
+
+    width: 5%;
+
+    height: 100%;
+
+    border-radius: 20px;
+
+    background:
+    linear-gradient(
+        90deg,
+        #123b5d,
+        #1976d2
+    );
+
+    box-shadow:
+    0 0 10px
+    rgba(25,118,210,0.5);
+
+    transition:
+    width 0.8s ease;
+}
+
+
+/* Bottom status */
+
+.ai-status {
+
+    margin-top: 20px;
+
+    font-size: 12px;
+
+    color: #657985;
+
+    letter-spacing: 0.5px;
+}
+
+.status-dot {
+
+    display: inline-block;
+
+    width: 7px;
+
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #167a67;
+
+    margin-right: 6px;
+
+    box-shadow:
+    0 0 7px
+    rgba(22,122,103,0.5);
+
+    animation:
+    statusPulse 1s infinite;
+}
+
+@keyframes statusPulse {
+
+    0%,100% {
+        opacity: 0.35;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 20px 12px;
+    }
+
+    .container {
+        padding: 25px 20px;
+    }
+
+    .ai-core {
+        width: 165px;
+        height: 165px;
+    }
+
+    .ai-title {
+        font-size: 25px;
+    }
+
+    .ai-subtitle {
+        font-size: 15px;
+    }
+
+}
+
+</style>
 
 </head>
 
 
 <body>
+
 
 <div class="container">
 
@@ -198,19 +806,13 @@
     </p>
 
 
-    <!-- IMPORTANT:
-         enctype allows the image file
-         to be sent to Flask.
-    -->
-
     <form
         action="/submit-report"
         method="POST"
         enctype="multipart/form-data"
+        id="reportForm"
     >
 
-
-        <!-- Road Photo -->
 
         <label for="photo">
             Upload Road Photo
@@ -224,8 +826,6 @@
             required
         >
 
-
-        <!-- Problem Type -->
 
         <label for="problem">
             Type of Road Problem
@@ -264,8 +864,6 @@
         </select>
 
 
-        <!-- Location -->
-
         <div class="location-box">
 
             <p>
@@ -293,8 +891,6 @@
         </div>
 
 
-        <!-- Description -->
-
         <label for="description">
             Describe the Problem
         </label>
@@ -308,13 +904,12 @@
         ></textarea>
 
 
-        <!-- Submit -->
-
         <button
             type="submit"
             class="submit-button"
+            id="submitButton"
         >
-            Submit Report for AI Analysis
+            🤖 Submit Report for AI Analysis
         </button>
 
     </form>
@@ -330,7 +925,114 @@
 </div>
 
 
+<!-- =====================================================
+     AI ANALYSIS SCREEN
+===================================================== -->
+
+<div
+    class="ai-overlay"
+    id="aiOverlay"
+>
+
+    <div class="ai-glow"></div>
+
+    <div class="ai-grid"></div>
+
+
+    <div class="ai-content">
+
+
+        <div class="ai-brand">
+
+            AI ROAD GUARDIAN
+            <span>• GEMINI VISION</span>
+
+        </div>
+
+
+        <div class="ai-core">
+
+            <div class="ring-one"></div>
+
+            <div class="ring-two"></div>
+
+            <div class="ring-three"></div>
+
+            <div class="core-center"></div>
+
+            <div class="scan-beam"></div>
+
+            <div class="orbit-dot dot-one"></div>
+
+            <div class="orbit-dot dot-two"></div>
+
+            <div class="orbit-dot dot-three"></div>
+
+        </div>
+
+
+        <h2
+            class="ai-title"
+            id="aiTitle"
+        >
+            AI Vision Analysis
+        </h2>
+
+
+        <div
+            class="ai-subtitle"
+            id="aiSubtitle"
+        >
+            Initializing road image analysis...
+        </div>
+
+
+        <div class="progress-container">
+
+            <div class="progress-info">
+
+                <span id="stageText">
+                    INITIALIZING
+                </span>
+
+                <span id="percentage">
+                    5%
+                </span>
+
+            </div>
+
+
+            <div class="progress-track">
+
+                <div
+                    class="progress-bar"
+                    id="progressBar"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <div class="ai-status">
+
+            <span class="status-dot"></span>
+
+            Gemini Vision Engine is analyzing your road image
+
+        </div>
+
+    </div>
+
+</div>
+
+
 <script>
+
+
+/* =========================================================
+   LOCATION
+========================================================= */
 
 function getLocation() {
 
@@ -344,7 +1046,7 @@ function getLocation() {
     if (!navigator.geolocation) {
 
         locationText.textContent =
-            "Geolocation is not supported.";
+            "Location is not supported by this browser.";
 
         return;
     }
@@ -366,27 +1068,194 @@ function getLocation() {
 
 
             locationInput.value =
-                latitude + "," + longitude;
+                latitude + ", " + longitude;
 
 
             locationText.textContent =
-                "Location selected: "
-                + latitude
-                + ", "
-                + longitude;
-        },
+                "Location selected: " +
+                latitude.toFixed(5) +
+                ", " +
+                longitude.toFixed(5);
 
+        },
 
         function() {
 
             locationText.textContent =
-                "Unable to get location.";
+                "Unable to get location. You can continue without it.";
 
         }
 
     );
 
 }
+
+
+/* =========================================================
+   AI ANALYSIS ANIMATION
+========================================================= */
+
+const form =
+    document.getElementById("reportForm");
+
+const photo =
+    document.getElementById("photo");
+
+const overlay =
+    document.getElementById("aiOverlay");
+
+const submitButton =
+    document.getElementById("submitButton");
+
+const title =
+    document.getElementById("aiTitle");
+
+const subtitle =
+    document.getElementById("aiSubtitle");
+
+const stage =
+    document.getElementById("stageText");
+
+const percentage =
+    document.getElementById("percentage");
+
+const progressBar =
+    document.getElementById("progressBar");
+
+
+form.addEventListener(
+    "submit",
+    function(event) {
+
+
+        if (
+            !photo.files ||
+            photo.files.length === 0
+        ) {
+            return;
+        }
+
+
+        /*
+         * Show AI screen.
+         */
+
+        overlay.classList.add("active");
+
+
+        /*
+         * Prevent double clicks.
+         */
+
+        submitButton.disabled = true;
+
+
+        const stages = [
+
+            {
+                percent: 12,
+                stage: "IMAGE RECEIVED",
+                title: "Vision System Activated",
+                subtitle: "Reading your road image..."
+            },
+
+            {
+                percent: 27,
+                stage: "IMAGE PROCESSING",
+                title: "Scanning Road Surface",
+                subtitle: "Examining visible road conditions..."
+            },
+
+            {
+                percent: 45,
+                stage: "DAMAGE DETECTION",
+                title: "Detecting Road Damage",
+                subtitle: "Looking for potholes, cracks and waterlogging..."
+            },
+
+            {
+                percent: 63,
+                stage: "VISUAL ANALYSIS",
+                title: "Understanding the Scene",
+                subtitle: "Analyzing road damage patterns..."
+            },
+
+            {
+                percent: 79,
+                stage: "RISK ASSESSMENT",
+                title: "Evaluating Priority",
+                subtitle: "Determining urgency for authorities..."
+            },
+
+            {
+                percent: 91,
+                stage: "AI REPORT",
+                title: "Generating Analysis",
+                subtitle: "Preparing your road assessment..."
+            },
+
+            {
+                percent: 96,
+                stage: "FINALIZING",
+                title: "Almost Done",
+                subtitle: "Finalizing your AI road report..."
+            }
+
+        ];
+
+
+        let index = 0;
+
+
+        function runStage() {
+
+            if (
+                index >= stages.length
+            ) {
+                return;
+            }
+
+
+            const current =
+                stages[index];
+
+
+            progressBar.style.width =
+                current.percent + "%";
+
+
+            percentage.textContent =
+                current.percent + "%";
+
+
+            stage.textContent =
+                current.stage;
+
+
+            title.textContent =
+                current.title;
+
+
+            subtitle.textContent =
+                current.subtitle;
+
+
+            index++;
+
+
+            setTimeout(
+                runStage,
+                1300
+            );
+
+        }
+
+
+        runStage();
+
+    }
+
+);
 
 </script>
 
