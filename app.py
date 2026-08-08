@@ -4,8 +4,15 @@ from google import genai
 import os
 import json
 import uuid
+import sqlite3
+import requests
+
+# =========================================================
+# ENVIRONMENT
+# =========================================================
 
 load_dotenv()
+
 
 # =========================================================
 # GEMINI SETUP
@@ -14,11 +21,21 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
+
     print("Gemini API key loaded successfully.")
-    client = genai.Client(api_key=GEMINI_API_KEY)
+
+    client = genai.Client(
+        api_key=GEMINI_API_KEY
+    )
+
 else:
-    print("WARNING: GEMINI_API_KEY not found.")
+
+    print(
+        "WARNING: GEMINI_API_KEY not found."
+    )
+
     client = None
+
 
 # =========================================================
 # FLASK SETUP
@@ -26,92 +43,427 @@ else:
 
 app = Flask(__name__)
 
-app.secret_key = "ai-road-guardian-secret-key"
+app.secret_key = (
+    "ai-road-guardian-secret-key"
+)
+
 
 UPLOAD_FOLDER = "static/uploads"
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config[
+    "UPLOAD_FOLDER"
+] = UPLOAD_FOLDER
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+os.makedirs(
+    UPLOAD_FOLDER,
+    exist_ok=True
+)
+
 
 # =========================================================
-# COMPLAINT DATA
-# =========================================================
-# RG SYSTEM
-#
-# Every RG uses the same structure.
-# New reports are automatically added.
-# Every RG can have its own status.
+# DATABASE
 # =========================================================
 
-complaints = {
+DATABASE = "road_guardian.db"
 
-    "RG-1001": {
-        "location": "Main Market Road",
-        "description": "Large pothole on the road",
-        "priority": "High",
-        "status": "Pending"
-    },
 
-    "RG-1002": {
-        "location": "School Road",
-        "description": "Road surface damage",
-        "priority": "Medium",
-        "status": "In Progress"
-    },
+def get_db():
 
-    "RG-1003": {
-        "location": "Bus Stand Road",
-        "description": "Road condition requires inspection",
-        "priority": "Low",
-        "status": "Completed"
+    connection = sqlite3.connect(
+        DATABASE
+    )
+
+    connection.row_factory = (
+        sqlite3.Row
+    )
+
+    return connection
+
+
+# =========================================================
+# DATABASE INITIALIZATION + MIGRATION
+# =========================================================
+
+def init_database():
+
+    connection = get_db()
+
+
+    # -----------------------------------------------------
+    # Create table if it does not exist
+    # -----------------------------------------------------
+
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS complaints (
+
+            complaint_id TEXT PRIMARY KEY,
+
+            location TEXT,
+
+            description TEXT,
+
+            problem TEXT,
+
+            priority TEXT,
+
+            status TEXT,
+
+            photo TEXT,
+
+            ai_result TEXT,
+
+            created_at TIMESTAMP
+                DEFAULT CURRENT_TIMESTAMP
+
+        )
+        """
+    )
+
+
+    # -----------------------------------------------------
+    # Check existing columns
+    # -----------------------------------------------------
+
+    columns = connection.execute(
+        "PRAGMA table_info(complaints)"
+    ).fetchall()
+
+
+    existing_columns = {
+        column["name"]
+        for column in columns
     }
 
-}
+
+    # -----------------------------------------------------
+    # Add missing columns
+    #
+    # IMPORTANT:
+    # This upgrades the existing database.
+    # It does NOT delete existing complaints.
+    # -----------------------------------------------------
+
+    required_columns = {
+
+        "location":
+            "TEXT",
+
+        "description":
+            "TEXT",
+
+        "problem":
+            "TEXT",
+
+        "priority":
+            "TEXT",
+
+        "status":
+            "TEXT",
+
+        "photo":
+            "TEXT",
+
+        "ai_result":
+            "TEXT",
+
+        "created_at":
+            "TIMESTAMP"
+
+    }
+
+
+    for column_name, column_type in (
+        required_columns.items()
+    ):
+
+        if column_name not in existing_columns:
+
+            connection.execute(
+                f"""
+                ALTER TABLE complaints
+                ADD COLUMN {column_name}
+                {column_type}
+                """
+            )
+
+            print(
+                f"Database fix: added "
+                f"'{column_name}' column."
+            )
+
+
+    # -----------------------------------------------------
+    # Give old records safe defaults
+    # -----------------------------------------------------
+
+    connection.execute(
+        """
+        UPDATE complaints
+        SET priority = 'Medium'
+        WHERE priority IS NULL
+           OR priority = ''
+        """
+    )
+
+
+    connection.execute(
+        """
+        UPDATE complaints
+        SET status = 'Pending'
+        WHERE status IS NULL
+           OR status = ''
+        """
+    )
+
+
+    connection.execute(
+        """
+        UPDATE complaints
+        SET problem = 'Road problem reported'
+        WHERE problem IS NULL
+           OR problem = ''
+        """
+    )
+
+
+    connection.execute(
+        """
+        UPDATE complaints
+        SET description = 'Road problem reported'
+        WHERE description IS NULL
+           OR description = ''
+        """
+    )
+
+
+    connection.execute(
+        """
+        UPDATE complaints
+        SET location = 'Location not provided'
+        WHERE location IS NULL
+           OR location = ''
+        """
+    )
+
+
+    connection.commit()
+
+    connection.close()
+
+
+    print(
+        "Database initialization completed."
+    )
+
+
+# Run database initialization
+init_database()
+
 
 # =========================================================
-# RG STATUS SETTINGS
+# CONVERT DATABASE ROW TO DICTIONARY
 # =========================================================
 
-ALLOWED_STATUSES = [
-    "Pending",
-    "Engineer Assigned",
-    "In Progress",
-    "Completed"
-]
+def row_to_complaint(row):
+
+    if row is None:
+
+        return None
+
+
+    # -----------------------------------------------------
+    # Safely read AI result
+    # -----------------------------------------------------
+
+    ai_result = {}
+
+
+    try:
+
+        raw_ai_result = row["ai_result"]
+
+
+        if raw_ai_result:
+
+            ai_result = json.loads(
+                raw_ai_result
+            )
+
+
+            if not isinstance(
+                ai_result,
+                dict
+            ):
+
+                ai_result = {}
+
+
+    except Exception:
+
+        ai_result = {}
+
+
+    # -----------------------------------------------------
+    # Return complaint dictionary
+    # -----------------------------------------------------
+
+    return {
+
+        "location":
+            row["location"] or "",
+
+        "description":
+            row["description"] or "",
+
+        "problem":
+            row["problem"] or "",
+
+        "priority":
+            row["priority"] or "Medium",
+
+        "status":
+            row["status"] or "Pending",
+
+        "photo":
+            row["photo"] or "",
+
+        "ai_result":
+            ai_result,
+
+        "created_at":
+            row["created_at"]
+
+    }
+
 
 # =========================================================
-# CREATE NEXT RG ID
+# GET ONE COMPLAINT
+# =========================================================
+
+def get_complaint(
+    complaint_id
+):
+
+    connection = get_db()
+
+
+    row = connection.execute(
+        """
+        SELECT *
+        FROM complaints
+        WHERE complaint_id = ?
+        """,
+        (
+            complaint_id,
+        )
+    ).fetchone()
+
+
+    connection.close()
+
+
+    return row_to_complaint(
+        row
+    )
+
+
+# =========================================================
+# GET ALL COMPLAINTS
+# =========================================================
+
+def get_all_complaints():
+
+    connection = get_db()
+
+
+    rows = connection.execute(
+        """
+        SELECT *
+        FROM complaints
+        ORDER BY created_at ASC
+        """
+    ).fetchall()
+
+
+    connection.close()
+
+
+    complaints = {}
+
+
+    for row in rows:
+
+        complaints[
+            row["complaint_id"]
+        ] = row_to_complaint(
+            row
+        )
+
+
+    return complaints
+
+
+# =========================================================
+# CREATE NEXT DYNAMIC RG NUMBER
 # =========================================================
 
 def create_complaint_id():
 
-    numbers = []
+    connection = get_db()
 
-    for complaint_id in complaints.keys():
 
-        if complaint_id.startswith("RG-"):
+    rows = connection.execute(
+        """
+        SELECT complaint_id
+        FROM complaints
+        """
+    ).fetchall()
+
+
+    connection.close()
+
+
+    highest_number = 1000
+
+
+    for row in rows:
+
+        complaint_id = (
+            row["complaint_id"]
+            or ""
+        )
+
+
+        if complaint_id.startswith(
+            "RG-"
+        ):
 
             try:
 
                 number = int(
-                    complaint_id.replace(
-                        "RG-",
-                        ""
-                    )
+                    complaint_id[
+                        3:
+                    ]
                 )
 
-                numbers.append(number)
+
+                if number > highest_number:
+
+                    highest_number = (
+                        number
+                    )
+
 
             except ValueError:
+
                 pass
 
-    if not numbers:
-        return "RG-1001"
 
-    next_number = max(numbers) + 1
-
-    return f"RG-{next_number}"
+    return (
+        f"RG-{highest_number + 1}"
+    )
 
 
 # =========================================================
@@ -125,6 +477,7 @@ def home():
         "index.html"
     )
 
+
 # =========================================================
 # REPORT PAGE
 # =========================================================
@@ -136,37 +489,72 @@ def report():
         "report.html"
     )
 
+
 # =========================================================
 # GEMINI ROAD IMAGE ANALYSIS
 # =========================================================
 
-def analyze_road_image(image_path):
+def analyze_road_image(
+    image_path
+):
+
+    # -----------------------------------------------------
+    # Gemini unavailable
+    # -----------------------------------------------------
 
     if client is None:
 
         return {
-            "issue_type": "AI unavailable",
-            "estimated_depth": "Not available",
-            "priority": "Medium",
-            "possible_cause": "Gemini API key is not configured.",
-            "recommendation": "Please configure the Gemini API key."
+
+            "issue_type":
+                "AI unavailable",
+
+            "estimated_depth":
+                "Not available",
+
+            "priority":
+                "Medium",
+
+            "possible_cause":
+                "Gemini API key is not configured.",
+
+            "recommendation":
+                "Please configure the Gemini API key."
+
         }
 
+
     print()
-    print("========================================")
-    print("AI ROAD GUARDIAN")
-    print("Gemini 3.5 Flash is analyzing the image...")
-    print("========================================")
+    print(
+        "========================================"
+    )
+    print(
+        "AI ROAD GUARDIAN"
+    )
+    print(
+        "Gemini is analyzing the image..."
+    )
+    print(
+        "========================================"
+    )
     print()
+
 
     try:
 
+        # -------------------------------------------------
         # Upload image to Gemini
+        # -------------------------------------------------
+
         uploaded_file = client.files.upload(
             file=image_path
         )
 
+
+        # -------------------------------------------------
         # AI prompt
+        # -------------------------------------------------
+
         prompt = """
 You are an expert AI road-condition assessment assistant
 for a system called "AI Road Guardian".
@@ -286,7 +674,11 @@ Return exactly this structure:
 }
 """
 
-        # Gemini request
+
+        # -------------------------------------------------
+        # Generate AI response
+        # -------------------------------------------------
+
         response = client.models.generate_content(
 
             model="gemini-3.5-flash",
@@ -295,56 +687,107 @@ Return exactly this structure:
                 uploaded_file,
                 prompt
             ]
+
         )
 
-        # Get AI response
-        result = response.text.strip()
 
-        print("Gemini response received.")
+        result = (
+            response.text or ""
+        ).strip()
+
+
+        print(
+            "Gemini response:"
+        )
+
         print(result)
-        print()
 
-        # Remove markdown fences if Gemini adds them
-        result = result.replace("```json", "")
-        result = result.replace("```", "")
+
+        # -------------------------------------------------
+        # Remove accidental Markdown fences
+        # -------------------------------------------------
+
+        result = result.replace(
+            "```json",
+            ""
+        )
+
+        result = result.replace(
+            "```",
+            ""
+        )
+
         result = result.strip()
 
-        # Convert JSON to Python dictionary
-        ai_result = json.loads(result)
 
-        # Make sure all required fields exist
+        # -------------------------------------------------
+        # Parse JSON
+        # -------------------------------------------------
+
+        ai_result = json.loads(
+            result
+        )
+
+
+        if not isinstance(
+            ai_result,
+            dict
+        ):
+
+            raise ValueError(
+                "Gemini response was not a JSON object."
+            )
+
+
+        # -------------------------------------------------
+        # Normalize AI result
+        # -------------------------------------------------
+
         ai_result = {
 
-            "issue_type": ai_result.get(
-                "issue_type",
-                "Not identified"
-            ),
+            "issue_type":
+                ai_result.get(
+                    "issue_type",
+                    "Not identified"
+                ),
 
-            "estimated_depth": ai_result.get(
-                "estimated_depth",
-                "Not reliably measurable from image."
-            ),
+            "estimated_depth":
+                ai_result.get(
+                    "estimated_depth",
+                    "Not reliably measurable from image."
+                ),
 
-            "priority": ai_result.get(
-                "priority",
-                "Medium"
-            ),
+            "priority":
+                ai_result.get(
+                    "priority",
+                    "Medium"
+                ),
 
-            "possible_cause": ai_result.get(
-                "possible_cause",
-                "Could not be determined reliably."
-            ),
+            "possible_cause":
+                ai_result.get(
+                    "possible_cause",
+                    "Could not be determined reliably."
+                ),
 
-            "recommendation": ai_result.get(
-                "recommendation",
-                "Physical inspection recommended."
-            )
+            "recommendation":
+                ai_result.get(
+                    "recommendation",
+                    "Physical inspection recommended."
+                )
+
         }
 
+
+        # -------------------------------------------------
         # Normalize priority
+        # -------------------------------------------------
+
         priority = str(
-            ai_result["priority"]
+            ai_result[
+                "priority"
+            ]
         ).strip().capitalize()
+
 
         if priority not in [
             "Low",
@@ -354,37 +797,76 @@ Return exactly this structure:
 
             priority = "Medium"
 
-        ai_result["priority"] = priority
 
-        print("Structured AI result:")
-        print(ai_result)
-        print()
+        ai_result[
+            "priority"
+        ] = priority
+
 
         return ai_result
 
+
+    # =====================================================
+    # INVALID JSON
+    # =====================================================
+
     except json.JSONDecodeError:
 
-        print("Gemini returned invalid JSON.")
+        print(
+            "Gemini returned invalid JSON."
+        )
+
 
         return {
-            "issue_type": "Road damage detected",
-            "estimated_depth": "Not reliably measurable from image.",
-            "priority": "Medium",
-            "possible_cause": "Physical inspection is required.",
-            "recommendation": "A road authority engineer should inspect the reported location."
+
+            "issue_type":
+                "Road damage detected",
+
+            "estimated_depth":
+                "Not reliably measurable from image.",
+
+            "priority":
+                "Medium",
+
+            "possible_cause":
+                "Physical inspection is required.",
+
+            "recommendation":
+                "A road authority engineer should inspect the reported location."
+
         }
+
+
+    # =====================================================
+    # OTHER AI ERROR
+    # =====================================================
 
     except Exception as error:
 
-        print("Gemini analysis error:")
+        print(
+            "Gemini analysis error:"
+        )
+
         print(error)
 
+
         return {
-            "issue_type": "AI analysis unavailable",
-            "estimated_depth": "Not available",
-            "priority": "Medium",
-            "possible_cause": "AI analysis could not be completed.",
-            "recommendation": "Please retry the report or arrange a physical inspection."
+
+            "issue_type":
+                "AI analysis unavailable",
+
+            "estimated_depth":
+                "Not available",
+
+            "priority":
+                "Medium",
+
+            "possible_cause":
+                "AI analysis could not be completed.",
+
+            "recommendation":
+                "Please retry the report or arrange a physical inspection."
+
         }
 
 
@@ -392,130 +874,328 @@ Return exactly this structure:
 # SUBMIT REPORT
 # =========================================================
 
-@app.route("/submit-report", methods=["POST"])
+def get_location_name(latitude, longitude):
+
+    try:
+
+        latitude = float(latitude)
+        longitude = float(longitude)
+
+        response = requests.get(
+            "https://nominatim.openstreetmap.org/reverse",
+            params={
+                "lat": latitude,
+                "lon": longitude,
+                "format": "json",
+                "zoom": 18,
+                "addressdetails": 1
+            },
+            headers={
+                "User-Agent": "AI-Road-Guardian/1.0"
+            },
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        address = data.get("address", {})
+
+        road = (
+            address.get("road")
+            or address.get("pedestrian")
+            or address.get("residential")
+        )
+
+        locality = (
+            address.get("suburb")
+            or address.get("neighbourhood")
+            or address.get("village")
+            or address.get("town")
+            or address.get("city")
+        )
+
+        district = (
+            address.get("city_district")
+            or address.get("district")
+        )
+
+        state = address.get("state")
+
+        country = address.get("country")
+
+        parts = []
+
+        for value in [
+            road,
+            locality,
+            district,
+            state,
+            country
+        ]:
+
+            if value and value not in parts:
+                parts.append(value)
+
+        if parts:
+
+            return ", ".join(parts)
+
+        return f"{latitude}, {longitude}"
+
+    except Exception as error:
+
+        print(
+            "Reverse geocoding error:",
+            error
+        )
+
+        return f"{latitude}, {longitude}"
+
+@app.route(
+    "/submit-report",
+    methods=["POST"]
+)
 def submit_report():
 
     print()
-    print("========================================")
-    print("New road report received.")
-    print("========================================")
+    print(
+        "========================================"
+    )
+    print(
+        "New road report received."
+    )
+    print(
+        "========================================"
+    )
 
-    # Receive uploaded photo
-    photo = request.files.get("photo")
+
+    # -----------------------------------------------------
+    # Get uploaded photo
+    # -----------------------------------------------------
+
+    photo = request.files.get(
+        "photo"
+    )
+
 
     if not photo or not photo.filename:
 
-        print("ERROR: No photo uploaded.")
+        return (
+            "No photo uploaded",
+            400
+        )
 
-        return "No photo uploaded", 400
 
-    print("Photo received:", photo.filename)
+    # -----------------------------------------------------
+    # Validate image format
+    # -----------------------------------------------------
 
-    # Get extension
     extension = os.path.splitext(
         photo.filename
     )[1].lower()
 
-    # Allow common image formats
-    if extension not in [
+
+    allowed_extensions = [
+
         ".jpg",
         ".jpeg",
         ".png",
         ".webp"
-    ]:
+
+    ]
+
+
+    if extension not in (
+        allowed_extensions
+    ):
 
         return (
+
             "Unsupported image format. "
             "Please upload JPG, JPEG, PNG, or WEBP.",
+
             400
+
         )
 
-    # Create unique filename
+
+    # -----------------------------------------------------
+    # Generate unique filename
+    # -----------------------------------------------------
+
     filename = (
         str(uuid.uuid4())
         + extension
     )
 
+
     photo_path = os.path.join(
-        app.config["UPLOAD_FOLDER"],
+
+        app.config[
+            "UPLOAD_FOLDER"
+        ],
+
         filename
+
     )
 
-    # Save image
-    photo.save(photo_path)
 
-    print("Photo saved:", photo_path)
+    # -----------------------------------------------------
+    # Save photo
+    # -----------------------------------------------------
 
-    # Send image to Gemini
+    photo.save(
+        photo_path
+    )
+
+
+    print(
+        "Photo saved:",
+        photo_path
+    )
+
+
+    # -----------------------------------------------------
+    # AI ANALYSIS
+    # -----------------------------------------------------
+
     ai_result = analyze_road_image(
         photo_path
     )
 
-    # =====================================================
-    # RG CREATION
-    # =====================================================
 
-    complaint_id = create_complaint_id()
+    # -----------------------------------------------------
+    # Dynamic RG ID
+    # -----------------------------------------------------
 
-    # Get form values
+    complaint_id = (
+        create_complaint_id()
+    )
+
+
+    # -----------------------------------------------------
+    # User-submitted information
+    # -----------------------------------------------------
+
     location = request.form.get(
         "location",
         "Location not provided"
-    )
+    ).strip()
 
-    problem = request.form.get(
-        "problem",
-        "Road problem reported"
-    )
 
     description = request.form.get(
         "description",
         "Road problem reported"
-    )
+    ).strip()
 
-    # Store complaint
-    complaints[complaint_id] = {
 
-        "location": location,
+    problem = request.form.get(
+        "problem",
+        ""
+    ).strip()
 
-        "problem": problem,
 
-        "description": description,
+    # If user did not provide problem,
+    # use the AI-detected issue type.
 
-        "priority": ai_result["priority"],
+    if not problem:
 
-        "status": "Pending",
+        problem = ai_result[
+            "issue_type"
+        ]
 
-        "photo": filename,
 
-        "ai_result": ai_result
-    }
+    # -----------------------------------------------------
+    # Save complaint
+    # -----------------------------------------------------
+
+    connection = get_db()
+
+
+    try:
+
+        connection.execute(
+            """
+            INSERT INTO complaints
+            (
+                complaint_id,
+                location,
+                description,
+                problem,
+                priority,
+                status,
+                photo,
+                ai_result
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+
+            (
+
+                complaint_id,
+
+                location,
+
+                description,
+
+                problem,
+
+                # AI priority
+                ai_result[
+                    "priority"
+                ],
+
+                # Initial workflow status
+                "Pending",
+
+                filename,
+
+                json.dumps(
+                    ai_result
+                )
+
+            )
+        )
+
+
+        connection.commit()
+
+
+    finally:
+
+        connection.close()
+
 
     print(
         "Complaint created:",
         complaint_id
     )
 
-    print(
-        "Priority:",
-        ai_result["priority"]
-    )
 
     print(
-        "Status: Pending"
+        "AI Priority:",
+        ai_result[
+            "priority"
+        ]
     )
 
-    print("========================================")
-    print()
 
-    # Show AI analysis page
+    # -----------------------------------------------------
+    # Show AI analysis
+    # -----------------------------------------------------
+
     return render_template(
 
         "analysis.html",
 
-        complaint_id=complaint_id,
+        complaint_id=
+            complaint_id,
 
-        ai_result=ai_result
+        ai_result=
+            ai_result
+
     )
 
 
@@ -527,108 +1207,114 @@ def submit_report():
 def analysis():
 
     complaint_id = request.args.get(
-        "id",
-        "RG-1001"
+        "id"
     )
 
-    complaint = complaints.get(
+
+    if not complaint_id:
+
+        return redirect(
+            url_for("report")
+        )
+
+
+    complaint = get_complaint(
         complaint_id
     )
 
-    if complaint and "ai_result" in complaint:
 
-        return render_template(
+    if not complaint:
 
-            "analysis.html",
-
-            complaint_id=complaint_id,
-
-            ai_result=complaint["ai_result"]
+        return (
+            "Complaint not found",
+            404
         )
 
-    # Fallback for demo complaint
-    ai_result = {
-
-        "issue_type": "Pothole",
-
-        "estimated_depth":
-            "Not reliably measurable from image.",
-
-        "priority": "High",
-
-        "possible_cause":
-            "Water damage and surface wear",
-
-        "recommendation":
-            "Physical inspection and appropriate road repair are recommended."
-    }
 
     return render_template(
 
         "analysis.html",
 
-        complaint_id=complaint_id,
+        complaint_id=
+            complaint_id,
 
-        ai_result=ai_result
+        ai_result=
+            complaint[
+                "ai_result"
+            ]
+
     )
 
 
 # =========================================================
 # TRACK COMPLAINT
-
 # =========================================================
 
 @app.route("/track")
 def track():
 
     complaint_id = request.args.get(
-        "id",
-        "RG-1001"
+        "id"
     )
 
-    complaint = complaints.get(
+
+    # -----------------------------------------------------
+    # No RG entered
+    # -----------------------------------------------------
+
+    if not complaint_id:
+
+        return render_template(
+
+            "track.html",
+
+            complaint_id="",
+
+            complaint=None
+
+        )
+
+
+    # -----------------------------------------------------
+    # Normalize RG input
+    # -----------------------------------------------------
+
+    complaint_id = (
+        complaint_id
+        .strip()
+        .upper()
+    )
+
+
+    # -----------------------------------------------------
+    # Get complaint
+    # -----------------------------------------------------
+
+    complaint = get_complaint(
         complaint_id
     )
+
 
     return render_template(
 
         "track.html",
 
-        complaint_id=complaint_id,
+        complaint_id=
+            complaint_id,
 
-        complaint=complaint
+        complaint=
+            complaint
+
     )
 
 
 # =========================================================
-# TRACK COMPLAINT STATUS API
+# GOVERNMENT LOGIN PAGE
 # =========================================================
 
-@app.route("/track-status/<complaint_id>")
-def track_status(complaint_id):
-
-    complaint_id = complaint_id.upper()
-
-    complaint = complaints.get(complaint_id)
-
-    if not complaint:
-
-        return jsonify({
-            "success": False,
-            "message": "Complaint not found"
-        })
-
-    return jsonify({
-        "success": True,
-        "complaint": complaint
-    })
-
-
-# =========================================================
-# GOVERNMENT LOGIN
-# =========================================================
-
-@app.route("/government-login")
+@app.route(
+    "/government-login"
+)
 def government_login():
 
     return render_template(
@@ -647,36 +1333,57 @@ def government_login():
 def government_auth():
 
     username = request.form.get(
-        "username"
-    )
+        "username",
+        ""
+    ).strip()
+
 
     password = request.form.get(
-        "password"
+        "password",
+        ""
     )
 
+
+    # -----------------------------------------------------
+    # Existing government login
+    # -----------------------------------------------------
+
     if (
-        username == "officer@government.in"
-        and password == "road123"
+
+        username ==
+        "officer@government.in"
+
+        and
+
+        password ==
+        "road123"
+
     ):
 
         session[
             "government_logged_in"
         ] = True
 
+
         return jsonify({
 
-            "success": True,
+            "success":
+                True,
 
             "message":
                 "Login successful! Opening dashboard..."
+
         })
+
 
     return jsonify({
 
-        "success": False,
+        "success":
+            False,
 
         "message":
             "Incorrect email or password."
+
     })
 
 
@@ -687,6 +1394,10 @@ def government_auth():
 @app.route("/dashboard")
 def dashboard():
 
+    # -----------------------------------------------------
+    # Require government login
+    # -----------------------------------------------------
+
     if not session.get(
         "government_logged_in"
     ):
@@ -695,33 +1406,41 @@ def dashboard():
             "/government-login"
         )
 
+
+    # -----------------------------------------------------
+    # Get all RG complaints dynamically
+    # -----------------------------------------------------
+
+    complaints = (
+        get_all_complaints()
+    )
+
+
     return render_template(
 
         "dashboard.html",
 
-        complaints=complaints
+        complaints=
+            complaints
+
     )
 
 
 # =========================================================
-# UPDATE STATUS
-# =========================================================
-# THIS NOW WORKS FOR EVERY RG
-#
-# Example:
-#
-# /update-status/RG-1001
-# /update-status/RG-1002
-# /update-status/RG-1003
-# /update-status/RG-1004
-#
+# UPDATE STATUS FOR ANY RG
 # =========================================================
 
 @app.route(
     "/update-status/<complaint_id>",
     methods=["POST"]
 )
-def update_status(complaint_id):
+def update_status(
+    complaint_id
+):
+
+    # -----------------------------------------------------
+    # Require government login
+    # -----------------------------------------------------
 
     if not session.get(
         "government_logged_in"
@@ -731,36 +1450,262 @@ def update_status(complaint_id):
             "/government-login"
         )
 
-    status = request.form.get(
-        "status"
+
+    # -----------------------------------------------------
+    # Normalize RG
+    # -----------------------------------------------------
+
+    complaint_id = (
+        complaint_id
+        .strip()
+        .upper()
     )
 
-    if status not in ALLOWED_STATUSES:
 
-        print(
-            "Invalid status received:",
-            status
+    # -----------------------------------------------------
+    # Get requested status
+    # -----------------------------------------------------
+
+    new_status = request.form.get(
+        "status",
+        ""
+    ).strip()
+
+
+    allowed_statuses = [
+
+        "Pending",
+
+        "Engineer Assigned",
+
+        "In Progress",
+
+        "Completed"
+
+    ]
+
+
+    if new_status not in (
+        allowed_statuses
+    ):
+
+        return (
+            "Invalid status",
+            400
         )
+
+
+    # -----------------------------------------------------
+    # Update database
+    # -----------------------------------------------------
+
+    connection = get_db()
+
+
+    try:
+
+        existing = connection.execute(
+            """
+            SELECT complaint_id
+            FROM complaints
+            WHERE complaint_id = ?
+            """,
+            (
+                complaint_id,
+            )
+        ).fetchone()
+
+
+        if not existing:
+
+            return (
+                "Complaint not found",
+                404
+            )
+
+
+        connection.execute(
+            """
+            UPDATE complaints
+            SET status = ?
+            WHERE complaint_id = ?
+            """,
+
+            (
+
+                new_status,
+
+                complaint_id
+
+            )
+        )
+
+
+        connection.commit()
+
+
+    finally:
+
+        connection.close()
+
+
+    print(
+        f"{complaint_id} "
+        f"status updated to "
+        f"{new_status}"
+    )
+
+
+    return redirect(
+        url_for("dashboard")
+    )
+
+
+# =========================================================
+# EDIT ANY RG
+# =========================================================
+
+@app.route(
+    "/edit-report/<complaint_id>",
+    methods=["POST"]
+)
+def edit_report(
+    complaint_id
+):
+
+    # -----------------------------------------------------
+    # Require government login
+    # -----------------------------------------------------
+
+    if not session.get(
+        "government_logged_in"
+    ):
 
         return redirect(
-            url_for("dashboard")
+            "/government-login"
         )
 
-    if complaint_id in complaints:
 
-        complaints[
-            complaint_id
-        ]["status"] = status
+    # -----------------------------------------------------
+    # Normalize RG
+    # -----------------------------------------------------
 
-        print(
-            f"{complaint_id} status updated to: {status}"
+    complaint_id = (
+        complaint_id
+        .strip()
+        .upper()
+    )
+
+
+    # -----------------------------------------------------
+    # Check complaint
+    # -----------------------------------------------------
+
+    complaint = get_complaint(
+        complaint_id
+    )
+
+
+    if not complaint:
+
+        return (
+            "Complaint not found",
+            404
         )
 
-    else:
 
-        print(
-            f"RG not found: {complaint_id}"
-        )
+    # -----------------------------------------------------
+    # Read editable fields
+    # -----------------------------------------------------
+
+    location = request.form.get(
+        "location"
+    )
+
+
+    description = request.form.get(
+        "description"
+    )
+
+
+    problem = request.form.get(
+        "problem"
+    )
+
+
+    # -----------------------------------------------------
+    # Update fields
+    # -----------------------------------------------------
+
+    connection = get_db()
+
+
+    try:
+
+        if location is not None:
+
+            connection.execute(
+                """
+                UPDATE complaints
+                SET location = ?
+                WHERE complaint_id = ?
+                """,
+
+                (
+
+                    location.strip(),
+
+                    complaint_id
+
+                )
+            )
+
+
+        if description is not None:
+
+            connection.execute(
+                """
+                UPDATE complaints
+                SET description = ?
+                WHERE complaint_id = ?
+                """,
+
+                (
+
+                    description.strip(),
+
+                    complaint_id
+
+                )
+            )
+
+
+        if problem is not None:
+
+            connection.execute(
+                """
+                UPDATE complaints
+                SET problem = ?
+                WHERE complaint_id = ?
+                """,
+
+                (
+
+                    problem.strip(),
+
+                    complaint_id
+
+                )
+            )
+
+
+        connection.commit()
+
+
+    finally:
+
+        connection.close()
+
 
     return redirect(
         url_for("dashboard")
@@ -779,18 +1724,22 @@ def logout():
         None
     )
 
+
     return redirect(
         "/government-login"
     )
 
 
 # =========================================================
-# RUN
+# RUN APPLICATION
 # =========================================================
 
 if __name__ == "__main__":
 
     app.run(
+
         host="0.0.0.0",
+
         port=5000
+
     )

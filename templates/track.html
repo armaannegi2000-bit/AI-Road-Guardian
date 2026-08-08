@@ -12,8 +12,11 @@
         Track Complaint | AI Road Guardian
     </title>
 
-
     <style>
+
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -22,7 +25,6 @@
             color: #1f2937;
         }
 
-
         header {
             background: #123b5d;
             color: white;
@@ -30,24 +32,20 @@
             padding: 25px;
         }
 
-
         header h1 {
             margin: 0;
         }
-
 
         header p {
             margin-bottom: 0;
             opacity: 0.85;
         }
 
-
         .container {
             max-width: 750px;
             margin: 40px auto;
             padding: 20px;
         }
-
 
         .card {
             background: white;
@@ -59,11 +57,9 @@
                 rgba(0, 0, 0, 0.12);
         }
 
-
         h2 {
             color: #123b5d;
         }
-
 
         input {
             width: 100%;
@@ -76,10 +72,7 @@
             border-radius: 8px;
 
             font-size: 16px;
-
-            box-sizing: border-box;
         }
-
 
         button {
             background: #1976d2;
@@ -95,11 +88,9 @@
             cursor: pointer;
         }
 
-
         button:hover {
             opacity: 0.85;
         }
-
 
         .status-box {
             margin-top: 25px;
@@ -113,7 +104,6 @@
             border-radius: 8px;
         }
 
-
         .step {
             padding: 12px;
             margin: 10px 0;
@@ -125,24 +115,25 @@
             border: 1px solid #e2e8f0;
         }
 
-
         .completed {
             color: #16803c;
             font-weight: bold;
         }
-
 
         .progress {
             color: #e66a00;
             font-weight: bold;
         }
 
-
         .pending {
             color: #3730a3;
             font-weight: bold;
         }
 
+        .assigned {
+            color: #3730a3;
+            font-weight: bold;
+        }
 
         .not-found {
             margin-top: 25px;
@@ -157,10 +148,25 @@
             border-radius: 8px;
 
             color: #991b1b;
-
-            display: none;
         }
 
+        .report-info {
+            background: white;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            margin-bottom: 15px;
+        }
+
+        .report-info p {
+            margin: 10px 0;
+        }
+
+        .report-info strong {
+            color: #123b5d;
+        }
 
         .home-link {
             display: inline-block;
@@ -174,22 +180,23 @@
             font-weight: bold;
         }
 
-
-        .report-info {
-            background: white;
+        .ai-box {
+            margin-top: 15px;
 
             padding: 15px;
 
+            background: #f8fafc;
+
             border-radius: 8px;
 
-            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
         }
 
+        .ai-box h3 {
+            margin-top: 0;
 
-        .report-info strong {
             color: #123b5d;
         }
-
 
         @media (max-width: 700px) {
 
@@ -227,7 +234,6 @@
 
 <div class="container">
 
-
     <div class="card">
 
 
@@ -242,157 +248,401 @@
         </p>
 
 
-        <input
-            id="complaintId"
-            type="text"
-            placeholder="Example: RG-1001"
-            autocomplete="off"
+        <!-- ================================================= -->
+        <!-- TRACK FORM -->
+        <!-- ================================================= -->
+
+        <form
+            method="GET"
+            action="/track"
         >
 
-
-        <button
-            onclick="trackComplaint()">
-
-            Track Complaint
-
-        </button>
-
-
-        <!-- NOT FOUND MESSAGE -->
-
-        <div
-            class="not-found"
-            id="notFound">
-
-            <strong>
-                Complaint not found
-            </strong>
-
-            <p>
-                Please check the complaint ID
-                and try again.
-            </p>
-
-        </div>
+            <input
+                id="complaintId"
+                name="id"
+                type="text"
+                placeholder="Example: RG-1001"
+                value="{{ complaint_id or '' }}"
+                autocomplete="off"
+                required
+            >
 
 
-        <!-- STATUS RESULT -->
+            <button type="submit">
 
-        <div
-            class="status-box"
-            id="statusBox"
-            style="display: none;">
+                Track Complaint
 
+            </button>
 
-            <h2>
-                Complaint Status
-            </h2>
+        </form>
 
 
-            <div class="report-info">
+        <!-- ================================================= -->
+        <!-- COMPLAINT NOT FOUND -->
+        <!-- ================================================= -->
 
-                <p>
+        {% if complaint_id and not complaint %}
 
-                    Complaint ID:
-                    <strong id="displayId">
-                        -
-                    </strong>
+            <div class="not-found">
 
-                </p>
-
-
-                <p>
-
-                    Location:
-                    <strong id="displayLocation">
-                        -
-                    </strong>
-
-                </p>
-
-
-                <p>
-
-                    AI Priority:
-                    <strong id="displayPriority">
-                        -
-                    </strong>
-
-                </p>
-
-            </div>
-
-
-            <!-- REPORT RECEIVED -->
-
-            <div class="step">
-
-                <span class="completed">
-
-                    ✓ Report Received
-
-                </span>
-
-            </div>
-
-
-            <!-- AI ANALYSIS -->
-
-            <div class="step">
-
-                <span class="completed">
-
-                    ✓ AI Analysis Completed
-
-                </span>
-
-            </div>
-
-
-            <!-- ENGINEER STATUS -->
-
-            <div
-                class="step"
-                id="engineerStep">
-
-                <span id="engineerStatus">
-
-                    ⏳ Engineer Assignment Pending
-
-                </span>
-
-            </div>
-
-
-            <!-- REPAIR STATUS -->
-
-            <div
-                class="step"
-                id="repairStep">
-
-                <span id="repairStatus">
-
-                    ⏳ Repair Work Pending
-
-                </span>
-
-            </div>
-
-
-            <!-- CURRENT STATUS -->
-
-            <div class="step">
-
-                Current Status:
-
-                <strong id="currentStatus">
-                    -
+                <strong>
+                    Complaint not found
                 </strong>
 
+                <p>
+
+                    Complaint ID
+
+                    <strong>
+                        {{ complaint_id }}
+                    </strong>
+
+                    could not be found.
+
+                </p>
+
+                <p>
+
+                    Please check the complaint ID
+                    and try again.
+
+                </p>
+
             </div>
 
+        {% endif %}
 
-        </div>
+
+        <!-- ================================================= -->
+        <!-- COMPLAINT FOUND -->
+        <!-- ================================================= -->
+
+        {% if complaint %}
+
+            <div class="status-box">
+
+
+                <h2>
+                    Complaint Status
+                </h2>
+
+
+                <!-- BASIC REPORT INFORMATION -->
+
+                <div class="report-info">
+
+
+                    <p>
+
+                        Complaint ID:
+
+                        <strong>
+                            {{ complaint_id }}
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        Location:
+
+                        <strong>
+
+                            {{ complaint.get(
+                                "location",
+                                "Location not provided"
+                            ) }}
+
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        Reported Problem:
+
+                        <strong>
+
+                            {{ complaint.get(
+                                "problem",
+                                "Not provided"
+                            ) }}
+
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        Description:
+
+                        <strong>
+
+                            {{ complaint.get(
+                                "description",
+                                "Not provided"
+                            ) }}
+
+                        </strong>
+
+                    </p>
+
+
+                    <p>
+
+                        AI Priority:
+
+                        {% if complaint.get("priority") == "High" %}
+
+                            <strong style="color:#b42318;">
+                                High
+                            </strong>
+
+                        {% elif complaint.get("priority") == "Medium" %}
+
+                            <strong style="color:#a65d00;">
+                                Medium
+                            </strong>
+
+                        {% else %}
+
+                            <strong style="color:#16723a;">
+                                Low
+                            </strong>
+
+                        {% endif %}
+
+                    </p>
+
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPORT RECEIVED -->
+                <!-- ================================================= -->
+
+                <div class="step">
+
+                    <span class="completed">
+
+                        ✓ Report Received
+
+                    </span>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- AI ANALYSIS -->
+                <!-- ================================================= -->
+
+                <div class="step">
+
+                    <span class="completed">
+
+                        ✓ AI Analysis Completed
+
+                    </span>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- ENGINEER STATUS -->
+                <!-- ================================================= -->
+
+                <div class="step">
+
+
+                    {% if complaint.get("status") == "Pending" %}
+
+                        <span class="pending">
+
+                            ⏳ Engineer Assignment Pending
+
+                        </span>
+
+
+                    {% else %}
+
+                        <span class="completed">
+
+                            ✓ Engineer Assigned
+
+                        </span>
+
+                    {% endif %}
+
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- REPAIR STATUS -->
+                <!-- ================================================= -->
+
+                <div class="step">
+
+
+                    {% if complaint.get("status") == "In Progress" %}
+
+                        <span class="progress">
+
+                            🔧 Repair Work In Progress
+
+                        </span>
+
+
+                    {% elif complaint.get("status") == "Completed" %}
+
+                        <span class="completed">
+
+                            ✓ Repair Work Completed
+
+                        </span>
+
+
+                    {% else %}
+
+                        <span class="pending">
+
+                            ⏳ Repair Work Pending
+
+                        </span>
+
+                    {% endif %}
+
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- CURRENT STATUS -->
+                <!-- ================================================= -->
+
+                <div class="step">
+
+                    Current Status:
+
+                    {% if complaint.get("status") == "Pending" %}
+
+                        <strong class="pending">
+                            Pending
+                        </strong>
+
+                    {% elif complaint.get("status") == "Engineer Assigned" %}
+
+                        <strong class="assigned">
+                            Engineer Assigned
+                        </strong>
+
+                    {% elif complaint.get("status") == "In Progress" %}
+
+                        <strong class="progress">
+                            In Progress
+                        </strong>
+
+                    {% elif complaint.get("status") == "Completed" %}
+
+                        <strong class="completed">
+                            Completed
+                        </strong>
+
+                    {% else %}
+
+                        <strong>
+                            {{ complaint.get(
+                                "status",
+                                "Pending"
+                            ) }}
+                        </strong>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- AI DETAILS -->
+                <!-- ================================================= -->
+
+                {% if complaint.get("ai_result") %}
+
+                    <div class="ai-box">
+
+                        <h3>
+                            🤖 AI Road Assessment
+                        </h3>
+
+
+                        <p>
+
+                            <strong>
+                                Issue Type:
+                            </strong>
+
+                            {{ complaint["ai_result"].get(
+                                "issue_type",
+                                "Not available"
+                            ) }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Estimated Depth:
+                            </strong>
+
+                            {{ complaint["ai_result"].get(
+                                "estimated_depth",
+                                "Not available"
+                            ) }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Possible Cause:
+                            </strong>
+
+                            {{ complaint["ai_result"].get(
+                                "possible_cause",
+                                "Not available"
+                            ) }}
+
+                        </p>
+
+
+                        <p>
+
+                            <strong>
+                                Recommendation:
+                            </strong>
+
+                            {{ complaint["ai_result"].get(
+                                "recommendation",
+                                "Not available"
+                            ) }}
+
+                        </p>
+
+
+                    </div>
+
+                {% endif %}
+
+
+            </div>
+
+        {% endif %}
 
 
         <a
@@ -406,300 +656,7 @@
 
     </div>
 
-
 </div>
-
-
-<script>
-
-async function trackComplaint() {
-
-
-    const input =
-        document.getElementById(
-            "complaintId"
-        );
-
-
-    const complaintId =
-        input.value
-        .trim()
-        .toUpperCase();
-
-
-    const statusBox =
-        document.getElementById(
-            "statusBox"
-        );
-
-
-    const notFound =
-        document.getElementById(
-            "notFound"
-        );
-
-
-    /* Reset */
-
-    statusBox.style.display =
-        "none";
-
-    notFound.style.display =
-        "none";
-
-
-    if (!complaintId) {
-
-        notFound.style.display =
-            "block";
-
-        notFound.querySelector(
-            "strong"
-        ).textContent =
-            "Please enter a complaint ID";
-
-        notFound.querySelector(
-            "p"
-        ).textContent =
-            "Example: RG-1001";
-
-        return;
-
-    }
-
-
-    try {
-
-
-        const response =
-            await fetch(
-                "/track-status/" +
-                encodeURIComponent(
-                    complaintId
-                )
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!data.success) {
-
-
-            notFound.style.display =
-                "block";
-
-
-            notFound.querySelector(
-                "strong"
-            ).textContent =
-                "Complaint not found";
-
-
-            notFound.querySelector(
-                "p"
-            ).textContent =
-                "Please check the complaint ID and try again.";
-
-
-            return;
-
-        }
-
-
-        const complaint =
-            data.complaint;
-
-
-        /* Basic information */
-
-        document.getElementById(
-            "displayId"
-        ).textContent =
-            complaintId;
-
-
-        document.getElementById(
-            "displayLocation"
-        ).textContent =
-            complaint.location ||
-            "Location not provided";
-
-
-        document.getElementById(
-            "displayPriority"
-        ).textContent =
-            complaint.priority ||
-            "Not available";
-
-
-        document.getElementById(
-            "currentStatus"
-        ).textContent =
-            complaint.status ||
-            "Pending";
-
-
-        /* Status */
-
-        const status =
-            complaint.status;
-
-
-        const engineerStatus =
-            document.getElementById(
-                "engineerStatus"
-            );
-
-
-        const repairStatus =
-            document.getElementById(
-                "repairStatus"
-            );
-
-
-        engineerStatus.className = "";
-        repairStatus.className = "";
-
-
-        if (status === "Pending") {
-
-
-            engineerStatus.textContent =
-                "⏳ Engineer Assignment Pending";
-
-            engineerStatus.className =
-                "pending";
-
-
-            repairStatus.textContent =
-                "⏳ Repair Work Pending";
-
-            repairStatus.className =
-                "pending";
-
-
-        }
-
-
-        else if (
-            status ===
-            "Engineer Assigned"
-        ) {
-
-
-            engineerStatus.textContent =
-                "✓ Engineer Assigned";
-
-            engineerStatus.className =
-                "completed";
-
-
-            repairStatus.textContent =
-                "⏳ Repair Work Pending";
-
-            repairStatus.className =
-                "pending";
-
-
-        }
-
-
-        else if (
-            status ===
-            "In Progress"
-        ) {
-
-
-            engineerStatus.textContent =
-                "✓ Engineer Assigned";
-
-            engineerStatus.className =
-                "completed";
-
-
-            repairStatus.textContent =
-                "🔧 Repair Work In Progress";
-
-            repairStatus.className =
-                "progress";
-
-
-        }
-
-
-        else if (
-            status ===
-            "Completed"
-        ) {
-
-
-            engineerStatus.textContent =
-                "✓ Engineer Assigned";
-
-            engineerStatus.className =
-                "completed";
-
-
-            repairStatus.textContent =
-                "✓ Repair Completed";
-
-            repairStatus.className =
-                "completed";
-
-
-        }
-
-
-        else {
-
-
-            engineerStatus.textContent =
-                "Current status: " +
-                status;
-
-
-            repairStatus.textContent =
-                "Current status: " +
-                status;
-
-        }
-
-
-        statusBox.style.display =
-            "block";
-
-
-    }
-
-
-    catch (error) {
-
-
-        console.error(error);
-
-
-        notFound.style.display =
-            "block";
-
-
-        notFound.querySelector(
-            "strong"
-        ).textContent =
-            "Unable to check complaint";
-
-
-        notFound.querySelector(
-            "p"
-        ).textContent =
-            "Please try again.";
-
-    }
-
-}
-
-</script>
 
 
 </body>

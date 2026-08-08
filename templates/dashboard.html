@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -32,6 +33,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+
             flex-wrap: wrap;
             gap: 15px;
         }
@@ -45,13 +47,28 @@
             opacity: 0.85;
         }
 
-        .home-button {
-            background: white;
-            color: #123b5d;
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .home-button,
+        .logout-button {
             text-decoration: none;
             padding: 10px 16px;
             border-radius: 8px;
             font-weight: bold;
+        }
+
+        .home-button {
+            background: white;
+            color: #123b5d;
+        }
+
+        .logout-button {
+            background: #dc2626;
+            color: white;
         }
 
         .container {
@@ -66,16 +83,17 @@
 
         .welcome h2 {
             margin-bottom: 8px;
+            color: #123b5d;
         }
 
         .stats {
             display: grid;
 
             grid-template-columns:
-            repeat(
-                auto-fit,
-                minmax(200px, 1fr)
-            );
+                repeat(
+                    auto-fit,
+                    minmax(200px, 1fr)
+                );
 
             gap: 20px;
             margin-bottom: 30px;
@@ -87,8 +105,8 @@
             border-radius: 14px;
 
             box-shadow:
-            0 5px 18px
-            rgba(0, 0, 0, 0.08);
+                0 5px 18px
+                rgba(0, 0, 0, 0.08);
         }
 
         .stat-card h3 {
@@ -122,8 +140,8 @@
             border-radius: 14px;
 
             box-shadow:
-            0 5px 18px
-            rgba(0, 0, 0, 0.08);
+                0 5px 18px
+                rgba(0, 0, 0, 0.08);
 
             margin-bottom: 25px;
         }
@@ -131,6 +149,28 @@
         .panel h2 {
             margin-top: 0;
             color: #123b5d;
+        }
+
+        .alert-box {
+            padding: 18px;
+            border-left: 6px solid #f97316;
+            background: #fff7ed;
+            border-radius: 8px;
+        }
+
+        .alert-box strong {
+            color: #9a3412;
+        }
+
+        .safe-box {
+            padding: 18px;
+            border-left: 6px solid #16a34a;
+            background: #f0fdf4;
+            border-radius: 8px;
+        }
+
+        .safe-box strong {
+            color: #166534;
         }
 
         table {
@@ -143,11 +183,13 @@
             padding: 14px;
             text-align: left;
             border-bottom:
-            1px solid #e2e8f0;
+                1px solid #e2e8f0;
+            vertical-align: middle;
         }
 
         th {
             background: #eaf3fa;
+            color: #123b5d;
         }
 
         .badge {
@@ -156,6 +198,7 @@
             border-radius: 20px;
             font-size: 13px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         .high {
@@ -177,11 +220,11 @@
             background: #e0e7ff;
             color: #3730a3;
         }
-        
+
         .assigned {
-    background: #e0e7ff;
-    color: #3730a3;
-}
+            background: #e0e7ff;
+            color: #3730a3;
+        }
 
         .progress {
             background: #dbeafe;
@@ -193,30 +236,67 @@
             color: #166534;
         }
 
+        .status-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-select {
+            padding: 8px 10px;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 7px;
+
+            background: white;
+            color: #1e293b;
+        }
+
         .action-button {
             border: none;
             background: #1976d2;
             color: white;
+
             padding: 9px 13px;
+
             border-radius: 7px;
+
             cursor: pointer;
+            font-weight: bold;
         }
 
         .action-button:hover {
             opacity: 0.85;
         }
 
-        .alert-box {
-            background: #fff7ed;
-            border-left:
-            6px solid #f97316;
+        .view-button {
+            display: inline-block;
 
-            padding: 18px;
-            border-radius: 8px;
+            text-decoration: none;
+
+            border: none;
+
+            background: #123b5d;
+            color: white;
+
+            padding: 9px 13px;
+
+            border-radius: 7px;
+
+            font-weight: bold;
         }
 
-        .alert-box strong {
-            color: #9a3412;
+        .view-button:hover {
+            opacity: 0.85;
+        }
+
+        .ai-info {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #64748b;
         }
 
         .footer-note {
@@ -226,24 +306,29 @@
             font-size: 14px;
         }
 
-        @media
-        (max-width: 700px) {
+        @media (max-width: 700px) {
 
             header {
-                align-items:
-                flex-start;
+                align-items: flex-start;
             }
 
             .table-area {
                 overflow-x: auto;
             }
+
+            table {
+                min-width: 950px;
+            }
+
         }
 
     </style>
 
 </head>
 
+
 <body>
+
 
 <header>
 
@@ -259,18 +344,36 @@
 
     </div>
 
-    <a
-    href="/"
-    class="home-button">
 
-        ← Home
+    <div class="header-actions">
 
-    </a>
+        <a
+            href="/"
+            class="home-button">
+
+            ← Home
+
+        </a>
+
+        <a
+            href="/logout"
+            class="logout-button">
+
+            Logout
+
+        </a>
+
+    </div>
 
 </header>
 
 
-<main class="container">
+<div class="container">
+
+
+    <!-- ========================================= -->
+    <!-- WELCOME -->
+    <!-- ========================================= -->
 
     <section class="welcome">
 
@@ -280,14 +383,21 @@
 
         <p>
             Monitor citizen reports,
-            AI priority levels, and
-            repair progress.
+            AI priority levels,
+            and repair progress.
         </p>
 
     </section>
 
 
+    <!-- ========================================= -->
+    <!-- STATISTICS -->
+    <!-- ========================================= -->
+
     <section class="stats">
+
+
+        <!-- TOTAL -->
 
         <div class="stat-card">
 
@@ -296,11 +406,15 @@
             </h3>
 
             <div class="number">
-                128
+
+                {{ complaints|length }}
+
             </div>
 
         </div>
 
+
+        <!-- HIGH PRIORITY -->
 
         <div class="stat-card">
 
@@ -309,11 +423,31 @@
             </h3>
 
             <div class="number red">
-                24
+
+                {% set high_count =
+                    namespace(value=0) %}
+
+                {% for complaint
+                    in complaints.values() %}
+
+                    {% if complaint.get("priority")
+                        == "High" %}
+
+                        {% set high_count.value =
+                            high_count.value + 1 %}
+
+                    {% endif %}
+
+                {% endfor %}
+
+                {{ high_count.value }}
+
             </div>
 
         </div>
 
+
+        <!-- IN PROGRESS -->
 
         <div class="stat-card">
 
@@ -322,11 +456,31 @@
             </h3>
 
             <div class="number orange">
-                37
+
+                {% set progress_count =
+                    namespace(value=0) %}
+
+                {% for complaint
+                    in complaints.values() %}
+
+                    {% if complaint.get("status")
+                        == "In Progress" %}
+
+                        {% set progress_count.value =
+                            progress_count.value + 1 %}
+
+                    {% endif %}
+
+                {% endfor %}
+
+                {{ progress_count.value }}
+
             </div>
 
         </div>
 
+
+        <!-- COMPLETED -->
 
         <div class="stat-card">
 
@@ -335,7 +489,25 @@
             </h3>
 
             <div class="number green">
-                67
+
+                {% set completed_count =
+                    namespace(value=0) %}
+
+                {% for complaint
+                    in complaints.values() %}
+
+                    {% if complaint.get("status")
+                        == "Completed" %}
+
+                        {% set completed_count.value =
+                            completed_count.value + 1 %}
+
+                    {% endif %}
+
+                {% endfor %}
+
+                {{ completed_count.value }}
+
             </div>
 
         </div>
@@ -343,32 +515,195 @@
     </section>
 
 
+    <!-- ========================================= -->
+    <!-- AI PRIORITY ALERT -->
+    <!-- ========================================= -->
+
     <section class="panel">
 
         <h2>
-            🚨 AI Priority Alert
+            🤖 AI Priority Alert
         </h2>
 
-        <div class="alert-box">
 
-            <strong>
-                High-risk road damage detected
-            </strong>
+        {% set high_reports = [] %}
+        {% set medium_reports = [] %}
+        {% set low_reports = [] %}
 
-            <p>
 
-                Multiple severe road
-                problems were reported
-                near the main market.
-                Engineer inspection is
-                recommended.
+        {% for complaint_id, complaint
+            in complaints.items() %}
 
-            </p>
 
-        </div>
+            {% if complaint.get("priority")
+                == "High" %}
+
+                {% set _ =
+                    high_reports.append(
+                        complaint_id
+                    )
+                %}
+
+
+            {% elif complaint.get("priority")
+                == "Medium" %}
+
+                {% set _ =
+                    medium_reports.append(
+                        complaint_id
+                    )
+                %}
+
+
+            {% elif complaint.get("priority")
+                == "Low" %}
+
+                {% set _ =
+                    low_reports.append(
+                        complaint_id
+                    )
+                %}
+
+            {% endif %}
+
+
+        {% endfor %}
+
+
+        {% if high_reports|length > 0 %}
+
+
+            <div class="alert-box">
+
+                <strong>
+
+                    🚨 AI detected
+                    {{ high_reports|length }}
+
+                    high-priority road issue
+                    {% if high_reports|length != 1 %}
+                        s
+                    {% endif %}
+
+                </strong>
+
+
+                <p>
+
+                    Gemini road analysis has identified
+                    high-priority road damage requiring
+                    prompt attention from road authorities.
+
+                    Engineer inspection is recommended.
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Report IDs:
+                    </strong>
+
+                    {% for complaint_id
+                        in high_reports %}
+
+                        #{{ complaint_id }}
+
+                        {% if not loop.last %}
+                            ,
+                        {% endif %}
+
+                    {% endfor %}
+
+                </p>
+
+            </div>
+
+
+        {% elif medium_reports|length > 0 %}
+
+
+            <div class="alert-box">
+
+                <strong>
+
+                    ⚠️ AI detected
+                    {{ medium_reports|length }}
+                    medium-priority road issue
+                    {% if medium_reports|length != 1 %}
+                        s
+                    {% endif %}
+
+                </strong>
+
+
+                <p>
+
+                    No high-priority road damage
+                    is currently detected.
+
+                    AI has identified medium-priority
+                    reports that should be monitored
+                    and inspected.
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        Report IDs:
+                    </strong>
+
+                    {% for complaint_id
+                        in medium_reports %}
+
+                        #{{ complaint_id }}
+
+                        {% if not loop.last %}
+                            ,
+                        {% endif %}
+
+                    {% endfor %}
+
+                </p>
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="safe-box">
+
+                <strong>
+
+                    ✅ No high-priority
+                    road issues detected
+
+                </strong>
+
+
+                <p>
+
+                    Based on the available AI road
+                    assessments, no high-priority issue
+                    currently requires immediate attention.
+
+                </p>
+
+            </div>
+
+
+        {% endif %}
 
     </section>
 
+
+    <!-- ========================================= -->
+    <!-- RECENT ROAD REPORTS -->
+    <!-- ========================================= -->
 
     <section class="panel">
 
@@ -376,9 +711,11 @@
             Recent Road Reports
         </h2>
 
+
         <div class="table-area">
 
             <table>
+
 
                 <thead>
 
@@ -390,6 +727,10 @@
 
                         <th>
                             Location
+                        </th>
+
+                        <th>
+                            Problem
                         </th>
 
                         <th>
@@ -411,200 +752,281 @@
 
                 <tbody>
 
+
+                    {% for complaint_id, complaint
+                        in complaints.items() %}
+
+
                     <tr>
 
-                        <td>
-                            #RG-1001
-                        </td>
 
-                        <td>
-                            Main Market Road
-                        </td>
+                        <!-- RG ID -->
 
                         <td>
 
-                            <span class="badge high">
-
-                                High
-
-                            </span>
+                            <strong>
+                                #{{ complaint_id }}
+                            </strong>
 
                         </td>
 
+
+                        <!-- LOCATION -->
+
                         <td>
 
-                            <span class="badge
-{% if complaints["RG-1001"]["status"] == "Pending" %}
-pending
-{% elif complaints["RG-1001"]["status"] == "Engineer Assigned" %}
-assigned
-{% elif complaints["RG-1001"]["status"] == "In Progress" %}
-progress
-{% elif complaints["RG-1001"]["status"] == "Completed" %}
-completed
-{% endif %}
-">
-    {{ complaints["RG-1001"]["status"] }}
-</span>
+                            {{ complaint.get(
+                                "location",
+                                "Location not provided"
+                            ) }}
+
                         </td>
 
+
+                        <!-- PROBLEM -->
+
                         <td>
-<form action="/update-status/RG-1001" method="POST">
 
-    <select name="status">
+                            {{ complaint.get(
+                                "problem",
+                                "Road problem"
+                            ) }}
 
-       <option
-    value="Pending"
-    {% if complaints["RG-1001"]["status"] == "Pending" %}
-    selected
-    {% endif %}>
-    Pending
-</option>
+                        </td>
 
-<option
-    value="Engineer Assigned"
-    {% if complaints["RG-1001"]["status"] == "Engineer Assigned" %}
-    selected
-    {% endif %}>
-    Engineer Assigned
-</option>
 
-<option
-    value="In Progress"
-    {% if complaints["RG-1001"]["status"] == "In Progress" %}
-    selected
-    {% endif %}>
-    In Progress
-</option>
+                        <!-- AI PRIORITY -->
 
-<option
-    value="Completed"
-    {% if complaints["RG-1001"]["status"] == "Completed" %}
-    selected
-    {% endif %}>
-    Completed
-</option>
+                        <td>
 
-    </select>
 
-    <button
-        type="submit"
-        class="action-button">
+                            {% if complaint.get("priority")
+                                == "High" %}
 
-        Update Status
+                                <span class="badge high">
 
-    </button>
+                                    High
 
-</form>
+                                </span>
+
+
+                            {% elif complaint.get("priority")
+                                == "Medium" %}
+
+                                <span class="badge medium">
+
+                                    Medium
+
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="badge low">
+
+                                    Low
+
+                                </span>
+
+                            {% endif %}
+
+
+                            <div class="ai-info">
+
+                                🤖 Gemini AI assessment
+
+                            </div>
+
+                        </td>
+
+
+                        <!-- STATUS -->
+
+                        <td>
+
+
+                            {% if complaint.get("status")
+                                == "Pending" %}
+
+                                <span class="badge pending">
+
+                                    Pending
+
+                                </span>
+
+
+                            {% elif complaint.get("status")
+                                == "Engineer Assigned" %}
+
+                                <span class="badge assigned">
+
+                                    Engineer Assigned
+
+                                </span>
+
+
+                            {% elif complaint.get("status")
+                                == "In Progress" %}
+
+                                <span class="badge progress">
+
+                                    In Progress
+
+                                </span>
+
+
+                            {% elif complaint.get("status")
+                                == "Completed" %}
+
+                                <span class="badge completed">
+
+                                    Completed
+
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="badge pending">
+
+                                    {{ complaint.get(
+                                        "status",
+                                        "Pending"
+                                    ) }}
+
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- ACTION -->
+
+                        <td>
+
+
+                            <form
+                                action="/update-status/{{ complaint_id }}"
+                                method="POST"
+                                class="status-form"
+                            >
+
+
+                                <select
+                                    name="status"
+                                    class="status-select"
+                                >
+
+
+                                    <option
+                                        value="Pending"
+
+                                        {% if complaint.get("status")
+                                            == "Pending" %}
+
+                                            selected
+
+                                        {% endif %}
+                                    >
+
+                                        Pending
+
+                                    </option>
+
+
+                                    <option
+                                        value="Engineer Assigned"
+
+                                        {% if complaint.get("status")
+                                            == "Engineer Assigned" %}
+
+                                            selected
+
+                                        {% endif %}
+                                    >
+
+                                        Engineer Assigned
+
+                                    </option>
+
+
+                                    <option
+                                        value="In Progress"
+
+                                        {% if complaint.get("status")
+                                            == "In Progress" %}
+
+                                            selected
+
+                                        {% endif %}
+                                    >
+
+                                        In Progress
+
+                                    </option>
+
+
+                                    <option
+                                        value="Completed"
+
+                                        {% if complaint.get("status")
+                                            == "Completed" %}
+
+                                            selected
+
+                                        {% endif %}
+                                    >
+
+                                        Completed
+
+                                    </option>
+
+
+                                </select>
+
+
+                                <button
+                                    type="submit"
+                                    class="action-button"
+                                >
+
+                                    Update Status
+
+                                </button>
+
+
+                            </form>
+
+
+                           
+
+                        </td>
+
+
+                    </tr>
+
+
+                    {% else %}
+
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            style="text-align:center;"
+                        >
+
+                            No road reports available.
 
                         </td>
 
                     </tr>
 
 
-                    <tr>
-
-                        <td>
-                            #RG-1002
-                        </td>
-
-                        <td>
-                            School Road
-                        </td>
-
-                        <td>
-
-                            <span class="badge medium">
-
-                                Medium
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <span class="badge progress">
-
-                                In Progress
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button
-                            class="action-button">
-
-                                View Report
-
-                            </button>
-
-                        </td>
-
-                    </tr>
+                    {% endfor %}
 
 
-                    <tr>
-
-                        <td>
-                            #RG-1003
-                        </td>
-
-                        <td>
-                            Bus Stand Road
-                        </td>
-
-                        <td>
-
-                            <span class="badge low">
-
-                                Low
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <span class="badge completed">
-
-                                Completed
-
-                            </span>
-
-                        </td>
-
-                        <td>
-
-                            <button
-                            class="action-button">
-
-                                View Details
-
-                            </button>
-
-                        </td>
-
-                    </tr>
-<script>
-
-function assignEngineer(button) {
-
-    button.innerText =
-        "Engineer Assigned";
-
-    button.style.background =
-        "#16803c";
-
-    alert(
-        "Engineer has been assigned successfully!"
-    );
-
-}
-
-</script>
                 </tbody>
 
             </table>
@@ -614,15 +1036,20 @@ function assignEngineer(button) {
     </section>
 
 
+    <!-- ========================================= -->
+    <!-- FOOTER -->
+    <!-- ========================================= -->
+
     <p class="footer-note">
 
-        Demo dashboard —
-        report values are currently
-        sample data.
+        AI Road Guardian —
+        Government road monitoring system.
 
     </p>
 
-</main>
+
+</div>
+
 
 </body>
 
