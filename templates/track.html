@@ -211,6 +211,31 @@
             color: #125b4c;
         }
 
+        .citizen-notification-box {
+            margin-top: 18px;
+            padding: 18px;
+            background: #eff6ff;
+            border: 1px solid #cfe0f5;
+            border-radius: 10px;
+        }
+
+        .citizen-notification-box h3 {
+            margin: 0 0 8px;
+            color: #123b5d;
+        }
+
+        .citizen-notification {
+            padding: 11px 0;
+            border-top: 1px solid #d9e6f2;
+        }
+
+        .citizen-notification time {
+            display: block;
+            margin-top: 4px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
         .repair-photo {
             display: block;
             width: 100%;
@@ -590,6 +615,68 @@
 
 
                 <!-- ================================================= -->
+                <!-- CITIZEN NOTIFICATIONS -->
+                <!-- ================================================= -->
+
+                <section class="citizen-notification-box" id="citizenNotifications" data-complaint-id="{{ complaint_id }}" aria-live="polite">
+                    <h3>🔔 Report Updates</h3>
+                    <p>New status changes and engineer updates for this report appear here.</p>
+
+                    {% for notice in citizen_notifications %}
+                        <div class="citizen-notification" data-notification-id="{{ notice.get('id') }}">
+                            <strong>{{ notice.get("message", "Your report has an update.") }}</strong>
+                            {% if notice.get("created_at") %}
+                                <time>{{ notice.get("created_at") }}</time>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p class="citizen-notification" data-empty-notifications>
+                            No notifications are recorded yet. Older activity may not have notification entries.
+                        </p>
+                    {% endfor %}
+                </section>
+
+
+                <!-- ================================================= -->
+                <!-- ENGINEER WORK UPDATES -->
+                <!-- ================================================= -->
+
+                {% if work_updates %}
+
+                    <div class="repair-photo-box">
+
+                        <h3>👷 Engineer Work Updates</h3>
+
+                        <p>
+                            Progress notes and photos shared by the assigned engineer.
+                        </p>
+
+                        {% for update in work_updates %}
+                            <div class="step">
+                                <strong>{{ update.get("status", "Work update") }}</strong>
+                                {% if update.get("engineer_name") %}
+                                    <span> · {{ update.get("engineer_name") }}</span>
+                                {% endif %}
+                                {% if update.get("created_at") %}
+                                    <br><small>{{ update.get("created_at") }}</small>
+                                {% endif %}
+                                {% if update.get("note") %}
+                                    <p>{{ update.get("note") }}</p>
+                                {% endif %}
+                                {% if update.get("photo") %}
+                                    <a href="{{ url_for('static', filename='uploads/' ~ update.get('photo')) }}" target="_blank" rel="noopener">
+                                        View progress photo
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+
+                <!-- ================================================= -->
                 <!-- ENGINEER REPAIR PHOTO -->
                 <!-- ================================================= -->
 
@@ -660,6 +747,21 @@
 
 
                         <p>
+                            <strong>Visible Evidence:</strong>
+                            {{ complaint["ai_result"].get(
+                                "visible_evidence",
+                                "No visual evidence summary is available for this report."
+                            ) }}
+                        </p>
+
+
+                        <p>
+                            <strong>Visual Confidence (qualitative):</strong>
+                            {{ complaint["ai_result"].get("visual_confidence", "Not available") }}
+                        </p>
+
+
+                        <p>
 
                             <strong>
                                 Estimated Depth:
@@ -670,6 +772,16 @@
                                 "Not available"
                             ) }}
 
+                        </p>
+
+
+                        <p>
+                            <strong>Depth Confidence:</strong>
+                            {{ complaint["ai_result"].get("depth_confidence", "Low") }}.
+                            {{ complaint["ai_result"].get(
+                                "depth_reference",
+                                "No measurement scale was identified."
+                            ) }}
                         </p>
 
 
@@ -701,6 +813,18 @@
                         </p>
 
 
+                        <p>
+                            <strong>Assessment Limits:</strong>
+                            {{ complaint["ai_result"].get(
+                                "limitations",
+                                "A single image cannot reliably establish damage depth or confirm road safety."
+                            ) }}
+                            {% if complaint["ai_result"].get("requires_site_inspection", True) %}
+                                On-site engineer inspection is recommended.
+                            {% endif %}
+                        </p>
+
+
                     </div>
 
                 {% endif %}
@@ -723,6 +847,62 @@
     </div>
 
 </div>
+
+
+{% if complaint %}
+<script>
+(function () {
+    const box = document.getElementById("citizenNotifications");
+    if (!box) return;
+
+    const complaintId = box.dataset.complaintId;
+    const knownIds = new Set(
+        Array.from(box.querySelectorAll("[data-notification-id]"))
+            .map((item) => item.dataset.notificationId)
+    );
+
+    async function refreshCitizenNotifications() {
+        try {
+            const response = await fetch(
+                "/track-notifications?id=" + encodeURIComponent(complaintId),
+                { cache: "no-store" }
+            );
+            if (!response.ok) return;
+
+            const data = await response.json();
+            const fresh = (data.notifications || []).filter(
+                (notice) => !knownIds.has(String(notice.id))
+            );
+            const emptyMessage = box.querySelector("[data-empty-notifications]");
+            if (fresh.length && emptyMessage) emptyMessage.remove();
+
+            fresh.reverse().forEach((notice) => {
+                const item = document.createElement("div");
+                item.className = "citizen-notification";
+                item.dataset.notificationId = String(notice.id);
+
+                const message = document.createElement("strong");
+                message.textContent = notice.message || "Your report has an update.";
+                item.appendChild(message);
+
+                if (notice.created_at) {
+                    const time = document.createElement("time");
+                    time.textContent = notice.created_at;
+                    item.appendChild(time);
+                }
+
+                box.insertBefore(item, box.children[2] || null);
+                knownIds.add(String(notice.id));
+            });
+        } catch (error) {
+            // Keep the tracking page usable if temporary polling fails.
+        }
+    }
+
+    window.setInterval(refreshCitizenNotifications, 20000);
+})();
+</script>
+{% endif %}
 
 
 </body>

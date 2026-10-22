@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineer Accounts | AI Road Guardian</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;line-height:1.5}header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:20px clamp(18px,5vw,56px);background:#123b5d;color:#fff}header h1{margin:0}header p{margin:4px 0 0;opacity:.85}.actions{display:flex;gap:10px;flex-wrap:wrap}.button{display:inline-block;padding:10px 15px;border-radius:8px;background:#fff;color:#123b5d;text-decoration:none;font-weight:bold;border:0;cursor:pointer;font-size:15px}.logout{background:#dc2626;color:#fff}.container{max-width:1000px;margin:34px auto;padding:0 20px}.panel{background:#fff;padding:clamp(20px,4vw,32px);border-radius:14px;box-shadow:0 5px 18px rgba(0,0,0,.08);margin-bottom:22px}.panel h2{margin-top:0;color:#123b5d}.muted{color:#64748b}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.field label{display:block;font-weight:bold;margin:0 0 7px}.field input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}.field.full{grid-column:1/-1}.submit{padding:12px 17px;background:#167a67;color:#fff;border:0;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer}.notice{padding:12px 14px;border-radius:8px;margin:14px 0}.success{background:#ecfdf5;color:#166534}.error{background:#fff1f2;color:#9f1239}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #e2e8f0}th{color:#526477;background:#f8fafc}footer{text-align:center;color:#64748b;padding:15px}@media(max-width:650px){.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.container{margin:20px auto;padding:0 12px}header{padding:18px 14px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>🛣️ AI Road Guardian</h1><p>Government Dashboard · Engineer Accounts</p></div>
+    <nav class="actions"><a class="button" href="/dashboard">← Government Dashboard</a><a class="button logout" href="/logout">Logout</a></nav>
+  </header>
+  <main class="container">
+    <section class="panel">
+      <h2>Create an engineer account</h2>
+      <p class="muted">Give each engineer an individual account. Share the initial password with that engineer directly.</p>
+      {% if created %}<p class="notice success" role="status">Engineer account created.</p>{% endif %}
+      {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+      <form action="/create-engineer" method="POST" class="form-grid">
+        <div class="field"><label for="full_name">Engineer full name</label><input id="full_name" type="text" name="full_name" autocomplete="name" required></div>
+        <div class="field"><label for="email">Engineer email</label><input id="email" type="email" name="email" autocomplete="email" required></div>
+        <div class="field"><label for="password">Initial password</label><input id="password" type="password" name="password" minlength="8" autocomplete="new-password" required></div>
+        <div class="field full"><button class="submit" type="submit">Create Engineer Account</button></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Existing engineer accounts</h2>
+      {% if engineers %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>Name</th><th>Email</th></tr></thead>
+          <tbody>{% for engineer in engineers %}<tr><td>{{ engineer.full_name }}</td><td>{{ engineer.email }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+      {% else %}
+        <p class="muted">No engineer accounts have been created yet.</p>
+      {% endif %}
+    </section>
+  </main>
+  <footer>AI Road Guardian — Government engineer account management</footer>
+</body>
+</html>

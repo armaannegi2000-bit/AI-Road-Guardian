@@ -508,6 +508,22 @@
                 </div>
 
 
+                <div class="result-box">
+                    <h3>Visible Evidence</h3>
+                    <p class="value cause-value">
+                        {{ ai_result.get("visible_evidence", "No visual evidence summary is available for this report.") }}
+                    </p>
+                </div>
+
+
+                <div class="result-box">
+                    <h3>Visual Confidence</h3>
+                    <p class="value depth-value">
+                        {{ ai_result.get("visual_confidence", "Not available") }}
+                    </p>
+                </div>
+
+
                 <!-- ESTIMATED DEPTH -->
 
                 <div class="result-box">
@@ -520,6 +536,11 @@
 
                         {{ ai_result.estimated_depth }}
 
+                    </p>
+
+                    <p>
+                        Depth confidence: {{ ai_result.get("depth_confidence", "Low") }}.
+                        {{ ai_result.get("depth_reference", "No measurement scale was identified.") }}
                     </p>
 
                 </div>
@@ -595,11 +616,12 @@
 
             <p class="note">
 
-                ⚠️ AI-generated analysis is based on
-                the uploaded road image. Authorities
-                should verify the condition through
-                physical inspection before taking
-                repair decisions.
+                ⚠️ {{ ai_result.get("limitations", "A single image cannot reliably establish damage depth or confirm road safety.") }}
+                {% if ai_result.get("requires_site_inspection", True) %}
+                    An on-site engineer inspection is recommended before repair decisions.
+                {% else %}
+                    This visual assessment is provisional and does not replace an engineering inspection.
+                {% endif %}
 
             </p>
 

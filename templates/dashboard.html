@@ -12,6 +12,13 @@
         Government Dashboard | AI Road Guardian
     </title>
 
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    >
+
     <style>
         .notification-item {
             padding: 10px 0;
@@ -539,6 +546,14 @@
         .verification-note { color: #455a6e; line-height: 1.45; }
         .footer-note { color: var(--muted); padding: 4px 0 12px; }
 
+        .gis-map { height: 470px; width: 100%; border-radius: 12px; border: 1px solid #d8e2ec; z-index: 1; }
+        .map-legend { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 14px 0; color: #526477; font-size: 14px; }
+        .map-legend span { display: inline-flex; align-items: center; gap: 7px; }
+        .legend-dot { width: 12px; height: 12px; display: inline-block; border-radius: 50%; }
+        .unmapped-list { margin: 14px 0 0; padding-left: 22px; color: #526477; }
+        .unmapped-list li { margin: 6px 0; }
+        .map-note { color: #64748b; font-size: 13px; margin-top: 12px; }
+
         @media (max-width: 700px) {
             header { padding: 18px 16px; }
             .container { padding: 20px 14px; }
@@ -573,6 +588,14 @@
 
 
     <div class="header-actions">
+
+        <a
+            href="/engineer-accounts"
+            class="home-button">
+
+            👷 Manage Engineer Accounts
+
+        </a>
 
         <a
             href="/"
@@ -630,17 +653,27 @@
         {% else %}<p class="ai-info">No notifications yet.</p>{% endfor %}
     </section>
 
-    <a class="engineer-link" href="/engineer-login">👷 Engineer sign-in</a>
-
     <section class="panel">
-        <h2>Create an engineer account</h2>
-        <p class="ai-info">Each engineer signs in with an individual email and password. Use a password with at least 8 characters.</p>
-        <form action="/create-engineer" method="POST" class="compact-form">
-            <input type="text" name="full_name" placeholder="Engineer full name" required>
-            <input type="email" name="email" placeholder="Engineer email" required>
-            <input type="password" name="password" placeholder="Initial password (8+ characters)" minlength="8" required>
-            <button type="submit" class="action-button">Create account</button>
-        </form>
+        <h2>🗺️ Government GIS Map</h2>
+        <p>Reports with GPS coordinates are shown on the map. Typed addresses without coordinates are listed below instead of being placed at an estimated point.</p>
+        <div class="map-legend" aria-label="Map marker legend">
+            <span><i class="legend-dot" style="background:#2563eb"></i> Pending / assigned</span>
+            <span><i class="legend-dot" style="background:#ea580c"></i> In progress</span>
+            <span><i class="legend-dot" style="background:#16a34a"></i> Completed</span>
+            <span><i class="legend-dot" style="background:#dc2626"></i> High priority</span>
+        </div>
+        <div id="governmentMap" class="gis-map" role="application" aria-label="Map of road complaints with GPS coordinates"></div>
+        <p class="map-note">Map tiles © OpenStreetMap contributors. Select a marker to view its report.</p>
+        {% if unmapped_reports %}
+            <details>
+                <summary>{{ unmapped_reports|length }} report(s) have no GPS coordinates to map</summary>
+                <ul class="unmapped-list">
+                    {% for item in unmapped_reports %}
+                        <li><a href="/track?id={{ item.complaint_id }}">{{ item.complaint_id }}</a> — {{ item.location }}</li>
+                    {% endfor %}
+                </ul>
+            </details>
+        {% endif %}
     </section>
 
     <!-- ========================================= -->
@@ -958,6 +991,38 @@
     <!-- RECENT ROAD REPORTS -->
     <!-- ========================================= -->
 
+    {% set duplicate_summary = namespace(count=0) %}
+    {% for report_id, report in complaints.items() %}
+        {% for match in report.get("ai_result", {}).get("possible_duplicates", []) %}
+            {% set duplicate_summary.count = duplicate_summary.count + 1 %}
+        {% endfor %}
+    {% endfor %}
+
+    <section class="panel">
+        <h2>🤖 Possible Duplicate Reports <span class="badge pending">{{ duplicate_summary.count }} for review</span></h2>
+        <p class="ai-info">These are suggestions for staff review, not confirmed duplicates. New reports are always accepted.</p>
+        {% if duplicate_summary.count %}
+            {% for report_id, report in complaints.items() %}
+                {% for match in report.get("ai_result", {}).get("possible_duplicates", []) %}
+                    <div class="alert-box" style="margin:12px 0;">
+                        <strong>
+                            New report <a href="/track?id={{ report_id }}">#{{ report_id }}</a>
+                            may match <a href="/track?id={{ match.complaint_id }}">#{{ match.complaint_id }}</a>
+                        </strong>
+                        {% if match.match_type == "ai" %}
+                            <p>AI similarity confidence: {{ match.confidence }}%</p>
+                        {% else %}
+                            <p>Location overlap only; AI comparison was unavailable. Please review manually.</p>
+                        {% endif %}
+                        <p>{{ match.reason }}</p>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        {% else %}
+            <p class="ai-info">No possible duplicate reports have been flagged.</p>
+        {% endif %}
+    </section>
+
     <section class="panel">
 
         <h2>
@@ -1179,7 +1244,7 @@
                                     <button type="submit" class="action-button">Assign</button>
                                 </form>
                             {% else %}
-                                <span class="ai-info">Create an engineer account above to assign reports.</span>
+                                <span class="ai-info">Create an engineer account on the <a href="/engineer-accounts">Engineer Accounts page</a> to assign reports.</span>
                             {% endif %}
                         </td>
 
@@ -1364,6 +1429,68 @@
 
 
 </div>
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+></script>
+<script>
+    (function () {
+        const reports = {{ map_reports|tojson }};
+        const mapElement = document.getElementById("governmentMap");
+        if (!mapElement || !window.L) {
+            if (mapElement) mapElement.textContent = "The map library could not load. Check your internet connection and refresh.";
+            return;
+        }
+
+        const map = L.map(mapElement, { scrollWheelZoom: false });
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        }).addTo(map);
+
+        const markers = [];
+        reports.forEach(function (report) {
+            const status = (report.status || "").toLowerCase();
+            const color = status === "completed" ? "#16a34a"
+                : status === "in progress" ? "#ea580c"
+                : (report.priority || "").toLowerCase() === "high" ? "#dc2626"
+                : "#2563eb";
+            const marker = L.circleMarker([report.latitude, report.longitude], {
+                radius: 9,
+                color: "#ffffff",
+                weight: 2,
+                fillColor: color,
+                fillOpacity: 0.92
+            }).addTo(map);
+
+            const popup = document.createElement("div");
+            const title = document.createElement("strong");
+            title.textContent = report.complaint_id + " — " + report.problem;
+            popup.appendChild(title);
+            [report.location, "Status: " + report.status, "Priority: " + report.priority].forEach(function (text) {
+                const line = document.createElement("p");
+                line.textContent = text;
+                popup.appendChild(line);
+            });
+            const link = document.createElement("a");
+            link.href = "/track?id=" + encodeURIComponent(report.complaint_id);
+            link.textContent = "Open complaint";
+            popup.appendChild(link);
+            marker.bindPopup(popup);
+            markers.push(marker);
+        });
+
+        if (markers.length === 1) {
+            map.setView(markers[0].getLatLng(), 15);
+        } else if (markers.length > 1) {
+            map.fitBounds(L.featureGroup(markers).getBounds().pad(0.15), { maxZoom: 15 });
+        } else {
+            map.setView([22.5, 79], 5);
+        }
+    })();
+</script>
 
 
 </body>

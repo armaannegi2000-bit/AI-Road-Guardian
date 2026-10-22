@@ -135,6 +135,14 @@ textarea {
     margin-bottom: 10px;
 }
 
+.location-attribution {
+    display: block;
+    margin-top: 8px;
+    color: #526777;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
 .location-button {
 
     padding: 10px 15px;
@@ -895,7 +903,11 @@ textarea {
             >
 
             <small>
-                “GPS can fill this field, or you can enter a street, area, or landmark manually. Location is optional.”
+                GPS coordinates are converted to a readable address when you submit. Exact street detail depends on map coverage. You can also enter a street, area, or landmark manually; location is optional.
+            </small>
+
+            <small class="location-attribution">
+                Address lookup by <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>.
             </small>
 
         </div>
