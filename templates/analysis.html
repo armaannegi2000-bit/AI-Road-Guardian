@@ -260,6 +260,11 @@
             color: #2e7d32;
         }
 
+        .priority-unavailable {
+
+            color: #64748b;
+        }
+
 
         /* =========================
            POSSIBLE CAUSE
@@ -555,7 +560,9 @@
                     </h3>
 
                     <p class="value
-                    {% if ai_result.priority|lower == 'high' %}
+                    {% if ai_result.get("analysis_status") == "unavailable" %}
+                        priority-unavailable
+                    {% elif ai_result.priority|lower == 'high' %}
                         priority-high
                     {% elif ai_result.priority|lower == 'medium' %}
                         priority-medium
@@ -564,7 +571,7 @@
                     {% endif %}
                     ">
 
-                        {{ ai_result.priority }}
+                        {{ "Not assessed — AI unavailable" if ai_result.get("analysis_status") == "unavailable" else ai_result.priority }}
 
                     </p>
 

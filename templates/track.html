@@ -443,7 +443,13 @@
 
                         AI Priority:
 
-                        {% if complaint.get("priority") == "High" %}
+                        {% if complaint.get("ai_result", {}).get("analysis_status") == "unavailable" %}
+
+                            <strong style="color:#64748b;">
+                                Not assessed — AI unavailable
+                            </strong>
+
+                        {% elif complaint.get("priority") == "High" %}
 
                             <strong style="color:#b42318;">
                                 High

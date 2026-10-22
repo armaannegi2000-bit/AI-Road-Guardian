@@ -27,6 +27,10 @@ _NOMINATIM_CACHE = {}
 load_dotenv()
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_FALLBACK_MODEL = os.getenv(
+    "GEMINI_FALLBACK_MODEL",
+    "gemini-3.6-flash"
+)
 
 
 # =========================================================
@@ -50,6 +54,45 @@ else:
     )
 
     client = None
+
+
+def generate_gemini_content(contents, config=None):
+    """Try the configured Gemini model, then a vision-capable fallback on 503."""
+    if client is None:
+        raise RuntimeError("Gemini client is not configured.")
+
+    models = [GEMINI_MODEL]
+    if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
+        models.append(GEMINI_FALLBACK_MODEL)
+
+    for index, model_name in enumerate(models):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config
+            )
+            return response, model_name
+        except Exception as error:
+            code = getattr(error, "code", None)
+            status = str(getattr(error, "status", "")).upper()
+            message = str(error).upper()
+            is_temporary_overload = (
+                code == 503
+                or status == "UNAVAILABLE"
+                or "503 UNAVAILABLE" in message
+                or "CURRENTLY EXPERIENCING HIGH DEMAND" in message
+            )
+
+            if not is_temporary_overload or index + 1 >= len(models):
+                raise
+
+            print(
+                f"Gemini model {model_name} is temporarily unavailable; "
+                f"trying fallback model {models[index + 1]}."
+            )
+
+    raise RuntimeError("No Gemini model was available.")
 
 
 # =========================================================
@@ -837,7 +880,10 @@ def analyze_road_image(
         return {
 
             "issue_type":
-                "AI unavailable",
+                "AI analysis unavailable",
+
+            "analysis_status":
+                "unavailable",
 
             "estimated_depth":
                 "Not reliably measurable from a single image; field measurement required.",
@@ -858,7 +904,7 @@ def analyze_road_image(
                 "AI analysis was unavailable. A field engineer must assess the image and measure damage.",
 
             "priority":
-                "Medium",
+                "Not assessed",
 
             "possible_cause":
                 "Cannot be determined because AI analysis is unavailable.",
@@ -941,10 +987,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
         # Generate AI response
         # -------------------------------------------------
 
-        response = client.models.generate_content(
-
-            model=GEMINI_MODEL,
-
+        response, analysis_model = generate_gemini_content(
             contents=[
                 uploaded_file,
                 prompt
@@ -1071,6 +1114,8 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             depth_confidence = "Low"
 
         ai_result = {
+            "analysis_status": "complete",
+            "analysis_model": analysis_model,
             "issue_type": safe_text("issue_type", "Unable to assess image."),
             "visible_evidence": safe_text("visible_evidence", "No reliable visual evidence was returned."),
             "estimated_depth": estimated_depth,
@@ -1136,6 +1181,9 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             "issue_type":
                 "AI analysis unavailable",
 
+            "analysis_status":
+                "unavailable",
+
             "estimated_depth":
                 "Not reliably measurable from a single image; field measurement required.",
 
@@ -1155,7 +1203,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 "The AI response was invalid. A field engineer must assess the image and measure damage.",
 
             "priority":
-                "Medium",
+                "Not assessed",
 
             "possible_cause":
                 "The image could not be assessed reliably.",
@@ -1184,6 +1232,9 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             "issue_type":
                 "AI analysis unavailable",
 
+            "analysis_status":
+                "unavailable",
+
             "estimated_depth":
                 "Not reliably measurable from a single image; field measurement required.",
 
@@ -1203,7 +1254,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 "AI analysis could not be completed. A field engineer must assess the image and measure damage.",
 
             "priority":
-                "Medium",
+                "Not assessed",
 
             "possible_cause":
                 "AI analysis could not be completed.",
@@ -1425,8 +1476,7 @@ REPORT DATA:
 """ + json.dumps(comparison_data, ensure_ascii=False)
 
     try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
+        response, _analysis_model = generate_gemini_content(
             contents=prompt
         )
         result_text = (response.text or "").strip()

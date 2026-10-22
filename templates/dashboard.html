@@ -1130,7 +1130,11 @@
                         <td>
 
 
-                            {% if complaint.get("priority")
+                            {% if complaint.get("ai_result", {}).get("analysis_status") == "unavailable" %}
+
+                                <span class="badge pending">Not assessed</span>
+
+                            {% elif complaint.get("priority")
                                 == "High" %}
 
                                 <span class="badge high">
