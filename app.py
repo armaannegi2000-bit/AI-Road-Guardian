@@ -6,6 +6,7 @@ import json
 import uuid
 import sqlite3
 import requests
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # =========================================================
 # ENVIRONMENT
@@ -169,7 +170,13 @@ def init_database():
             "TEXT",
 
         "created_at":
-            "TIMESTAMP"
+            "TIMESTAMP",
+
+        "assigned_engineer":
+            "TEXT",
+
+        "assigned_engineer_id":
+            "INTEGER"
 
     }
 
@@ -260,6 +267,175 @@ def init_database():
 
 # Run database initialization
 init_database()
+# =========================================================
+# COMPLAINT STATUS HISTORY
+# =========================================================
+
+def init_status_history():
+    connection = get_db()
+
+    try:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS complaint_status_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                complaint_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        connection.commit()
+
+    finally:
+        connection.close()
+
+
+init_status_history()
+
+
+def init_repair_verifications():
+
+    connection = get_db()
+
+    try:
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS repair_verifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                complaint_id TEXT NOT NULL,
+                engineer_name TEXT NOT NULL,
+                note TEXT NOT NULL,
+                photo TEXT NOT NULL,
+                review_status TEXT NOT NULL DEFAULT 'Pending Review',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reviewed_at TIMESTAMP
+            )
+        """)
+
+        connection.commit()
+
+    finally:
+
+        connection.close()
+
+
+init_repair_verifications()
+
+
+def init_engineer_work_updates():
+
+    connection = get_db()
+
+    try:
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS engineer_work_updates (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                complaint_id TEXT NOT NULL,
+                engineer_name TEXT NOT NULL,
+                status TEXT NOT NULL,
+                note TEXT NOT NULL,
+                photo TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        connection.commit()
+
+    finally:
+        connection.close()
+
+
+init_engineer_work_updates()
+
+
+def init_notifications():
+
+    connection = get_db()
+
+    try:
+
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                audience TEXT NOT NULL,
+                complaint_id TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_read INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+
+        connection.commit()
+
+    finally:
+        connection.close()
+
+
+init_notifications()
+
+
+def init_engineers():
+    connection = get_db()
+    try:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS engineers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                active INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        connection.commit()
+    finally:
+        connection.close()
+
+
+init_engineers()
+
+
+def get_engineers():
+    connection = get_db()
+    try:
+        return connection.execute(
+            "SELECT id, full_name, email FROM engineers WHERE active = 1 ORDER BY full_name"
+        ).fetchall()
+    finally:
+        connection.close()
+
+
+def add_notification(connection, audience, complaint_id, message):
+
+    connection.execute(
+        """
+        INSERT INTO notifications (audience, complaint_id, message)
+        VALUES (?, ?, ?)
+        """,
+        (audience, complaint_id, message)
+    )
+
+
+def get_notifications(audience, limit=10):
+
+    connection = get_db()
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT id, complaint_id, message, created_at, is_read
+            FROM notifications
+            WHERE audience = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT ?
+            """,
+            (audience, limit)
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    finally:
+        connection.close()
 
 
 # =========================================================
@@ -333,7 +509,13 @@ def row_to_complaint(row):
             ai_result,
 
         "created_at":
-            row["created_at"]
+            row["created_at"],
+
+        "assigned_engineer":
+            row["assigned_engineer"] or "",
+
+        "assigned_engineer_id":
+            row["assigned_engineer_id"] if "assigned_engineer_id" in row.keys() else None
 
     }
 
@@ -373,6 +555,29 @@ def get_complaint(
 # GET ALL COMPLAINTS
 # =========================================================
 
+def get_complaint_status_history(complaint_id):
+
+    connection = get_db()
+
+    try:
+
+        rows = connection.execute(
+            """
+            SELECT status, changed_at
+            FROM complaint_status_history
+            WHERE complaint_id = ?
+            ORDER BY changed_at ASC, id ASC
+            """,
+            (complaint_id,)
+        ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    finally:
+
+        connection.close()
+
+
 def get_all_complaints():
 
     connection = get_db()
@@ -395,14 +600,63 @@ def get_all_complaints():
 
     for row in rows:
 
-        complaints[
+        complaint = row_to_complaint(row)
+        complaint["latest_verification"] = get_latest_repair_verification(
             row["complaint_id"]
-        ] = row_to_complaint(
-            row
         )
+        work_updates = get_engineer_work_updates(row["complaint_id"])
+        complaint["work_updates"] = work_updates
+        complaint["latest_work_update"] = work_updates[0] if work_updates else None
+        complaints[row["complaint_id"]] = complaint
 
 
     return complaints
+
+
+def get_engineer_work_updates(complaint_id):
+
+    connection = get_db()
+
+    try:
+
+        rows = connection.execute(
+            """
+            SELECT id, engineer_name, status, note, photo, created_at
+            FROM engineer_work_updates
+            WHERE complaint_id = ?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (complaint_id,)
+        ).fetchall()
+
+        return [dict(row) for row in rows]
+
+    finally:
+        connection.close()
+
+
+def get_latest_repair_verification(complaint_id):
+
+    connection = get_db()
+
+    try:
+
+        row = connection.execute(
+            """
+            SELECT *
+            FROM repair_verifications
+            WHERE complaint_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (complaint_id,)
+        ).fetchone()
+
+        return dict(row) if row else None
+
+    finally:
+
+        connection.close()
 
 
 # =========================================================
@@ -1084,6 +1338,46 @@ def submit_report():
         "Location not provided"
     ).strip()
 
+    latitude = request.form.get("latitude", "").strip()
+    longitude = request.form.get("longitude", "").strip()
+
+    # The report form submits GPS coordinates in its location field.
+    # Also accept separate coordinate fields if a form sends them.
+    if not (latitude and longitude) and "," in location:
+
+        possible_latitude, possible_longitude = (
+            part.strip()
+            for part in location.split(",", 1)
+        )
+
+        try:
+
+            float(possible_latitude)
+            float(possible_longitude)
+            latitude = possible_latitude
+            longitude = possible_longitude
+
+        except ValueError:
+
+            pass
+
+    if latitude and longitude:
+
+        gps_coordinates = (
+            f"{float(latitude):.6f}, {float(longitude):.6f}"
+        )
+        address = get_location_name(
+            latitude,
+            longitude
+        )
+
+        if address == gps_coordinates:
+            location = f"GPS coordinates: {gps_coordinates}"
+        else:
+            location = (
+                f"{address} (GPS coordinates: {gps_coordinates})"
+            )
+
 
     description = request.form.get(
         "description",
@@ -1159,6 +1453,27 @@ def submit_report():
             )
         )
 
+        connection.execute(
+            """
+            INSERT INTO complaint_status_history
+            (complaint_id, status)
+            VALUES (?, ?)
+            """,
+            (complaint_id, "Pending")
+        )
+
+        add_notification(
+            connection,
+            "government",
+            complaint_id,
+            f"New road complaint {complaint_id} was submitted."
+        )
+        add_notification(
+            connection,
+            "engineers",
+            complaint_id,
+            f"New complaint {complaint_id} is available in the engineer inbox."
+        )
 
         connection.commit()
 
@@ -1270,7 +1585,11 @@ def track():
 
             complaint_id="",
 
-            complaint=None
+            complaint=None,
+
+            work_updates=[],
+
+            repair_verification=None
 
         )
 
@@ -1294,6 +1613,17 @@ def track():
         complaint_id
     )
 
+    status_history = (
+        get_complaint_status_history(complaint_id)
+        if complaint
+        else []
+    )
+
+    work_updates = (
+        get_engineer_work_updates(complaint_id)
+        if complaint
+        else []
+    )
 
     return render_template(
 
@@ -1303,7 +1633,19 @@ def track():
             complaint_id,
 
         complaint=
-            complaint
+            complaint,
+
+        status_history=
+            status_history,
+
+        work_updates=
+            work_updates,
+
+        repair_verification=(
+            get_latest_repair_verification(complaint_id)
+            if complaint
+            else None
+        )
 
     )
 
@@ -1359,6 +1701,8 @@ def government_auth():
         "road123"
 
     ):
+
+        session.clear()
 
         session[
             "government_logged_in"
@@ -1421,9 +1765,475 @@ def dashboard():
         "dashboard.html",
 
         complaints=
-            complaints
+            complaints,
+
+        notifications=
+            get_notifications("government"),
+
+        engineers=
+            get_engineers(),
+
+        unread_notification_count=
+            sum(notice["is_read"] == 0 for notice in get_notifications("government"))
 
     )
+
+
+# =========================================================
+# ENGINEER DASHBOARD
+# =========================================================
+
+@app.route("/engineer-login")
+def engineer_login():
+    if session.get("engineer_id"):
+        return redirect(url_for("engineer_dashboard"))
+    return render_template("engineer_login.html")
+
+
+@app.route("/engineer-auth", methods=["POST"])
+def engineer_auth():
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    connection = get_db()
+    try:
+        engineer = connection.execute(
+            "SELECT id, full_name, email, password_hash FROM engineers WHERE email = ? AND active = 1",
+            (email,)
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if not engineer or not check_password_hash(engineer["password_hash"], password):
+        return render_template("engineer_login.html", error="Email or password is incorrect.")
+
+    session.clear()
+    session["engineer_id"] = engineer["id"]
+    session["engineer_name"] = engineer["full_name"]
+    return redirect(url_for("engineer_dashboard"))
+
+
+@app.route("/create-engineer", methods=["POST"])
+def create_engineer():
+    if not session.get("government_logged_in"):
+        return redirect("/government-login")
+
+    full_name = request.form.get("full_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    if not full_name or not email or len(password) < 8:
+        return ("Enter the engineer name and email, and use a password of at least 8 characters.", 400)
+
+    connection = get_db()
+    try:
+        connection.execute(
+            "INSERT INTO engineers (full_name, email, password_hash) VALUES (?, ?, ?)",
+            (full_name, email, generate_password_hash(password))
+        )
+        connection.commit()
+    except sqlite3.IntegrityError:
+        return ("An engineer account already uses that email.", 409)
+    finally:
+        connection.close()
+
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/engineer-dashboard")
+def engineer_dashboard():
+
+    engineer_id = session.get("engineer_id")
+    if not engineer_id:
+        return redirect("/engineer-login")
+
+    engineer_name = session.get("engineer_name", "Engineer")
+    all_complaints = get_all_complaints()
+
+    complaints = {
+        complaint_id: complaint
+        for complaint_id, complaint in all_complaints.items()
+        if not complaint.get("assigned_engineer")
+        or complaint.get("assigned_engineer_id") == engineer_id
+    }
+
+    return render_template(
+        "engineer_dashboard.html",
+        engineer_name=engineer_name,
+        complaints=complaints,
+        notifications=get_notifications("engineers"),
+        unread_notification_count=sum(
+            notice["is_read"] == 0
+            for notice in get_notifications("engineers")
+        )
+    )
+
+
+@app.route("/claim-complaint/<complaint_id>", methods=["POST"])
+def claim_complaint(complaint_id):
+
+    engineer_id = session.get("engineer_id")
+    if not engineer_id:
+        return redirect("/engineer-login")
+
+    complaint_id = complaint_id.strip().upper()
+    engineer_name = session.get("engineer_name", "Engineer")
+
+    connection = get_db()
+
+    try:
+
+        cursor = connection.execute(
+            """
+            UPDATE complaints
+            SET assigned_engineer = ?, assigned_engineer_id = ?, status = 'Engineer Assigned'
+            WHERE complaint_id = ?
+              AND (assigned_engineer IS NULL OR assigned_engineer = '')
+              AND status != 'Completed'
+            """,
+            (engineer_name, engineer_id, complaint_id)
+        )
+
+        if cursor.rowcount != 1:
+            exists = connection.execute(
+                "SELECT complaint_id FROM complaints WHERE complaint_id = ?",
+                (complaint_id,)
+            ).fetchone()
+            if not exists:
+                return ("Complaint not found", 404)
+            return ("This complaint has already been claimed or completed", 409)
+
+        connection.execute(
+            """
+            INSERT INTO complaint_status_history (complaint_id, status)
+            VALUES (?, 'Engineer Assigned')
+            """,
+            (complaint_id,)
+        )
+        add_notification(
+            connection,
+            "government",
+            complaint_id,
+            f"An engineer claimed complaint {complaint_id}."
+        )
+        connection.commit()
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("engineer_dashboard"))
+
+
+@app.route("/assign-engineer/<complaint_id>", methods=["POST"])
+def assign_engineer(complaint_id):
+
+    if not session.get("government_logged_in"):
+        return redirect("/government-login")
+
+    complaint_id = complaint_id.strip().upper()
+    engineer_id = request.form.get("engineer_id", type=int)
+    if not engineer_id:
+        return ("Select an active engineer account", 400)
+
+    connection = get_db()
+    selected_engineer = connection.execute(
+        "SELECT full_name FROM engineers WHERE id = ? AND active = 1",
+        (engineer_id,)
+    ).fetchone()
+    if not selected_engineer:
+        connection.close()
+        return ("Engineer account not found", 404)
+    engineer_name = selected_engineer["full_name"]
+
+    try:
+
+        existing = connection.execute(
+            "SELECT complaint_id, status FROM complaints WHERE complaint_id = ?",
+            (complaint_id,)
+        ).fetchone()
+
+        if not existing:
+            return ("Complaint not found", 404)
+
+        if existing["status"] == "Completed":
+            return ("Completed complaints cannot be reassigned", 400)
+
+        new_status = "Engineer Assigned"
+        connection.execute(
+            """
+            UPDATE complaints
+            SET assigned_engineer = ?, assigned_engineer_id = ?, status = ?
+            WHERE complaint_id = ?
+            """,
+            (engineer_name, engineer_id, new_status, complaint_id)
+        )
+
+        if existing["status"] != new_status:
+            connection.execute(
+                """
+                INSERT INTO complaint_status_history (complaint_id, status)
+                VALUES (?, ?)
+                """,
+                (complaint_id, new_status)
+            )
+
+        add_notification(
+            connection,
+            "engineers",
+            complaint_id,
+            f"Complaint {complaint_id} was assigned to {engineer_name}."
+        )
+        connection.commit()
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("dashboard"))
+
+
+@app.route("/post-engineer-update/<complaint_id>", methods=["POST"])
+def post_engineer_update(complaint_id):
+
+    engineer_id = session.get("engineer_id")
+    if not engineer_id:
+        return redirect("/engineer-login")
+
+    complaint_id = complaint_id.strip().upper()
+    engineer_name = session.get("engineer_name", "Engineer")
+    note = request.form.get("note", "").strip()
+    new_status = request.form.get("status", "In Progress").strip()
+    photo = request.files.get("photo")
+
+    if not note:
+        return ("A work update is required", 400)
+
+    if new_status not in ["Engineer Assigned", "In Progress"]:
+        return ("Invalid work status", 400)
+
+    filename = None
+    saved_path = None
+
+    if photo and photo.filename:
+        extension = os.path.splitext(photo.filename)[1].lower()
+        if extension not in [".jpg", ".jpeg", ".png", ".webp"]:
+            return ("Unsupported image format", 400)
+        filename = str(uuid.uuid4()) + extension
+        saved_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        photo.save(saved_path)
+
+    connection = get_db()
+
+    try:
+
+        complaint = connection.execute(
+            """
+            SELECT status, assigned_engineer, assigned_engineer_id
+            FROM complaints
+            WHERE complaint_id = ?
+            """,
+            (complaint_id,)
+        ).fetchone()
+
+        if not complaint:
+            return ("Complaint not found", 404)
+
+        if complaint["assigned_engineer_id"] != engineer_id:
+            return ("This complaint is not assigned to that engineer", 403)
+
+        if complaint["status"] == "Completed":
+            return ("Completed complaints cannot receive new work updates", 400)
+
+        connection.execute(
+            """
+            INSERT INTO engineer_work_updates
+            (complaint_id, engineer_name, status, note, photo)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (complaint_id, engineer_name, new_status, note, filename)
+        )
+
+        if complaint["status"] != new_status:
+            connection.execute(
+                "UPDATE complaints SET status = ? WHERE complaint_id = ?",
+                (new_status, complaint_id)
+            )
+            connection.execute(
+                """
+                INSERT INTO complaint_status_history (complaint_id, status)
+                VALUES (?, ?)
+                """,
+                (complaint_id, new_status)
+            )
+
+        add_notification(
+            connection,
+            "government",
+            complaint_id,
+            f"Engineer {engineer_name} posted a progress update for {complaint_id}."
+        )
+        connection.commit()
+
+    except Exception:
+        if saved_path and os.path.exists(saved_path):
+            os.remove(saved_path)
+        raise
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("engineer_dashboard"))
+
+
+@app.route("/submit-repair-verification/<complaint_id>", methods=["POST"])
+def submit_repair_verification(complaint_id):
+
+    engineer_id = session.get("engineer_id")
+    if not engineer_id:
+        return redirect("/engineer-login")
+
+    complaint_id = complaint_id.strip().upper()
+    engineer_name = session.get("engineer_name", "Engineer")
+    note = request.form.get("note", "").strip()
+    photo = request.files.get("photo")
+
+    if not note:
+        return ("A repair note is required", 400)
+
+    if not photo or not photo.filename:
+        return ("A repair verification photo is required", 400)
+
+    extension = os.path.splitext(photo.filename)[1].lower()
+    if extension not in [".jpg", ".jpeg", ".png", ".webp"]:
+        return ("Unsupported image format", 400)
+
+    connection = get_db()
+    saved_path = None
+
+    try:
+
+        complaint = connection.execute(
+            """
+            SELECT complaint_id, status, assigned_engineer, assigned_engineer_id
+            FROM complaints
+            WHERE complaint_id = ?
+            """,
+            (complaint_id,)
+        ).fetchone()
+
+        if not complaint:
+            return ("Complaint not found", 404)
+
+        if complaint["assigned_engineer_id"] != engineer_id:
+            return ("This complaint is not assigned to that engineer", 403)
+
+        filename = str(uuid.uuid4()) + extension
+        saved_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        photo.save(saved_path)
+
+        connection.execute(
+            """
+            INSERT INTO repair_verifications
+            (complaint_id, engineer_name, note, photo)
+            VALUES (?, ?, ?, ?)
+            """,
+            (complaint_id, engineer_name, note, filename)
+        )
+
+        if complaint["status"] != "In Progress":
+            connection.execute(
+                "UPDATE complaints SET status = ? WHERE complaint_id = ?",
+                ("In Progress", complaint_id)
+            )
+            connection.execute(
+                """
+                INSERT INTO complaint_status_history (complaint_id, status)
+                VALUES (?, ?)
+                """,
+                (complaint_id, "In Progress")
+            )
+
+        connection.commit()
+
+    except Exception:
+        if saved_path and os.path.exists(saved_path):
+            os.remove(saved_path)
+        raise
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("engineer_dashboard"))
+
+
+@app.route("/review-repair-verification/<int:verification_id>", methods=["POST"])
+def review_repair_verification(verification_id):
+
+    if not session.get("government_logged_in"):
+        return redirect("/government-login")
+
+    decision = request.form.get("decision", "").strip()
+    if decision not in ["approve", "rework"]:
+        return ("Invalid verification decision", 400)
+
+    connection = get_db()
+
+    try:
+
+        verification = connection.execute(
+            """
+            SELECT complaint_id, review_status
+            FROM repair_verifications
+            WHERE id = ?
+            """,
+            (verification_id,)
+        ).fetchone()
+
+        if not verification:
+            return ("Repair verification not found", 404)
+
+        if verification["review_status"] != "Pending Review":
+            return ("This verification has already been reviewed", 400)
+
+        new_review_status = "Approved" if decision == "approve" else "Needs Rework"
+        new_complaint_status = "Completed" if decision == "approve" else "In Progress"
+
+        current = connection.execute(
+            "SELECT status FROM complaints WHERE complaint_id = ?",
+            (verification["complaint_id"],)
+        ).fetchone()
+
+        connection.execute(
+            """
+            UPDATE repair_verifications
+            SET review_status = ?, reviewed_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (new_review_status, verification_id)
+        )
+
+        if current and current["status"] != new_complaint_status:
+            connection.execute(
+                "UPDATE complaints SET status = ? WHERE complaint_id = ?",
+                (new_complaint_status, verification["complaint_id"])
+            )
+            connection.execute(
+                """
+                INSERT INTO complaint_status_history (complaint_id, status)
+                VALUES (?, ?)
+                """,
+                (verification["complaint_id"], new_complaint_status)
+            )
+
+        add_notification(
+            connection,
+            "engineers",
+            verification["complaint_id"],
+            f"Government {new_review_status.lower()} repair verification for {verification['complaint_id']}."
+        )
+        connection.commit()
+
+    finally:
+        connection.close()
+
+    return redirect(url_for("dashboard"))
 
 
 # =========================================================
@@ -1506,7 +2316,7 @@ def update_status(
 
         existing = connection.execute(
             """
-            SELECT complaint_id
+            SELECT complaint_id, status
             FROM complaints
             WHERE complaint_id = ?
             """,
@@ -1524,6 +2334,26 @@ def update_status(
             )
 
 
+        current_status = existing["status"]
+
+        if new_status == "Completed":
+            approved = connection.execute(
+                """
+                SELECT 1
+                FROM repair_verifications
+                WHERE complaint_id = ?
+                  AND review_status = 'Approved'
+                LIMIT 1
+                """,
+                (complaint_id,)
+            ).fetchone()
+
+            if not approved:
+                return (
+                    "A repair verification must be approved before completion",
+                    400
+                )
+
         connection.execute(
             """
             UPDATE complaints
@@ -1540,6 +2370,16 @@ def update_status(
             )
         )
 
+        if current_status != new_status:
+
+            connection.execute(
+                """
+                INSERT INTO complaint_status_history
+                (complaint_id, status)
+                VALUES (?, ?)
+                """,
+                (complaint_id, new_status)
+            )
 
         connection.commit()
 
@@ -1712,6 +2552,33 @@ def edit_report(
     )
 
 
+@app.route("/notifications/<int:notification_id>/read", methods=["POST"])
+def mark_notification_read(notification_id):
+
+    audience = request.form.get("audience", "")
+    if audience not in ["government", "engineers"]:
+        return ("Invalid notification audience", 400)
+    if audience == "government" and not session.get("government_logged_in"):
+        return redirect("/government-login")
+    if audience == "engineers" and not session.get("engineer_id"):
+        return redirect("/engineer-login")
+
+    connection = get_db()
+
+    try:
+        connection.execute(
+            "UPDATE notifications SET is_read = 1 WHERE id = ? AND audience = ?",
+            (notification_id, audience)
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    if audience == "engineers":
+        return redirect(url_for("engineer_dashboard"))
+    return redirect(url_for("dashboard"))
+
+
 # =========================================================
 # LOGOUT
 # =========================================================
@@ -1728,6 +2595,13 @@ def logout():
     return redirect(
         "/government-login"
     )
+
+
+@app.route("/engineer-logout")
+def engineer_logout():
+    session.pop("engineer_id", None)
+    session.pop("engineer_name", None)
+    return redirect(url_for("engineer_login"))
 
 
 # =========================================================

@@ -13,6 +13,17 @@
     </title>
 
     <style>
+        .notification-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .notification-item a { color: #123b5d; font-weight: bold; }
+        .notification-item small { color: #64748b; }
+
 
         * {
             box-sizing: border-box;
@@ -299,6 +310,37 @@
             color: #64748b;
         }
 
+        .engineer-link {
+            display: inline-block;
+            margin: 0 0 18px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #167a67;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .compact-form {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .compact-form input[type="text"] {
+            max-width: 150px;
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+        }
+
+        .verification-note {
+            max-width: 240px;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+
         .footer-note {
             text-align: center;
             color: #64748b;
@@ -322,6 +364,191 @@
 
         }
 
+    
+
+        /* Dashboard visual refresh */
+        :root {
+            --navy: #102f4f;
+            --navy-deep: #0b2239;
+            --blue: #1769aa;
+            --teal: #12806a;
+            --ink: #182b3e;
+            --muted: #65788a;
+            --line: #e3eaf1;
+            --surface: #ffffff;
+            --canvas: #f3f7fb;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse at 10% 0%, #e4f2fa 0, transparent 34%),
+                var(--canvas);
+            color: var(--ink);
+            line-height: 1.5;
+        }
+
+        header {
+            padding: 22px clamp(20px, 4vw, 56px);
+            background: linear-gradient(115deg, var(--navy-deep), #174d75);
+            box-shadow: 0 8px 24px rgba(10, 36, 59, .16);
+        }
+
+        header h1 {
+            font-size: clamp(23px, 3vw, 30px);
+            letter-spacing: -.4px;
+        }
+
+        header p { color: #d7e6f2; }
+
+        .home-button, .logout-button, .engineer-link,
+        .action-button, .view-button {
+            transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+        }
+
+        .home-button:hover, .logout-button:hover, .engineer-link:hover,
+        .action-button:hover, .view-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 13px rgba(16, 47, 79, .18);
+        }
+
+        .container {
+            max-width: 1440px;
+            padding: clamp(20px, 3vw, 38px);
+        }
+
+        .welcome {
+            padding: 4px 2px 22px;
+        }
+
+        .welcome h2 {
+            font-size: clamp(23px, 3vw, 30px);
+            letter-spacing: -.35px;
+            margin: 0 0 5px;
+        }
+
+        .welcome p { color: var(--muted); margin: 0; }
+
+        .stats { gap: 16px; }
+
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(221, 231, 239, .9);
+            border-radius: 16px;
+            padding: 22px 24px;
+            box-shadow: 0 4px 14px rgba(29, 58, 83, .055);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(29, 58, 83, .10);
+        }
+
+        .stat-card h3 {
+            color: var(--muted);
+            font-weight: 600;
+            letter-spacing: .15px;
+        }
+
+        .number { font-size: 38px; line-height: 1.1; }
+
+        .panel {
+            border: 1px solid rgba(221, 231, 239, .9);
+            border-radius: 16px;
+            padding: clamp(18px, 2.2vw, 28px);
+            box-shadow: 0 5px 18px rgba(29, 58, 83, .055);
+        }
+
+        .panel h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 21px;
+            letter-spacing: -.2px;
+        }
+
+        .alert-box, .safe-box {
+            border-radius: 12px;
+            line-height: 1.55;
+        }
+
+        .table-area {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+
+        table { min-width: 1080px; }
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 14px 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .55px;
+            background: #edf4fa;
+            border-bottom: 1px solid #d9e5ef;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #edf1f5;
+            line-height: 1.45;
+        }
+
+        tbody tr { background: #fff; transition: background .14s ease; }
+        tbody tr:hover { background: #f7fbfe; }
+        tbody tr:last-child td { border-bottom: 0; }
+
+        .badge {
+            padding: 6px 10px;
+            font-size: 12px;
+            letter-spacing: .1px;
+        }
+
+        .status-select, .compact-form input[type="text"] {
+            min-height: 38px;
+            border-color: #d3dde7;
+            font-size: 13px;
+        }
+
+        .action-button, .view-button {
+            min-height: 38px;
+            border-radius: 8px;
+            padding: 9px 12px;
+            white-space: nowrap;
+        }
+
+        .engineer-link {
+            margin: 0 0 20px;
+            border-radius: 9px;
+            padding: 11px 16px;
+            box-shadow: 0 4px 12px rgba(18, 128, 106, .15);
+        }
+
+        .notification-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .notification-item:last-child { border-bottom: 0; }
+        .notification-item form { margin-left: auto; }
+        .verification-note { color: #455a6e; line-height: 1.45; }
+        .footer-note { color: var(--muted); padding: 4px 0 12px; }
+
+        @media (max-width: 700px) {
+            header { padding: 18px 16px; }
+            .container { padding: 20px 14px; }
+            .stats { gap: 12px; }
+            .stat-card { padding: 18px; }
+            .panel { padding: 17px; }
+            .panel h2 { font-size: 19px; flex-wrap: wrap; }
+            .table-area { margin: 0 -2px; }
+        }
+
     </style>
 
 </head>
@@ -339,7 +566,7 @@
         </h1>
 
         <p>
-            Government & Engineer Dashboard
+            Government Dashboard
         </p>
 
     </div>
@@ -389,6 +616,32 @@
 
     </section>
 
+
+    <section class="panel notification-panel">
+        <h2>🔔 Government Notifications <span class="badge pending">{{ unread_notification_count }} unread</span></h2>
+        {% for notice in notifications %}
+            <div class="notification-item">
+                <a href="/track?id={{ notice.complaint_id }}">{{ notice.message }}</a>
+                <small>{{ notice.created_at }}</small>
+                {% if not notice.is_read %}
+                    <form action="/notifications/{{ notice.id }}/read" method="POST"><input type="hidden" name="audience" value="government"><button class="action-button" type="submit">Mark read</button></form>
+                {% endif %}
+            </div>
+        {% else %}<p class="ai-info">No notifications yet.</p>{% endfor %}
+    </section>
+
+    <a class="engineer-link" href="/engineer-login">👷 Engineer sign-in</a>
+
+    <section class="panel">
+        <h2>Create an engineer account</h2>
+        <p class="ai-info">Each engineer signs in with an individual email and password. Use a password with at least 8 characters.</p>
+        <form action="/create-engineer" method="POST" class="compact-form">
+            <input type="text" name="full_name" placeholder="Engineer full name" required>
+            <input type="email" name="email" placeholder="Engineer email" required>
+            <input type="password" name="password" placeholder="Initial password (8+ characters)" minlength="8" required>
+            <button type="submit" class="action-button">Create account</button>
+        </form>
+    </section>
 
     <!-- ========================================= -->
     <!-- STATISTICS -->
@@ -742,6 +995,18 @@
                         </th>
 
                         <th>
+                            Assigned Engineer
+                        </th>
+
+                        <th>
+                            Engineer Update
+                        </th>
+
+                        <th>
+                            Repair Verification
+                        </th>
+
+                        <th>
                             Action
                         </th>
 
@@ -901,11 +1166,61 @@
                         </td>
 
 
-                        <!-- ACTION -->
-
+                        <!-- ENGINEER ASSIGNMENT -->
                         <td>
+                            {% if engineers %}
+                                <form action="/assign-engineer/{{ complaint_id }}" method="POST" class="compact-form">
+                                    <select name="engineer_id" required>
+                                        <option value="">Select engineer</option>
+                                        {% for engineer in engineers %}
+                                            <option value="{{ engineer.id }}" {% if complaint.get('assigned_engineer_id') == engineer.id %}selected{% endif %}>{{ engineer.full_name }} ({{ engineer.email }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="action-button">Assign</button>
+                                </form>
+                            {% else %}
+                                <span class="ai-info">Create an engineer account above to assign reports.</span>
+                            {% endif %}
+                        </td>
 
+                        <!-- LATEST ENGINEER WORK UPDATE -->
+                        <td>
+                            {% set work_update = complaint.get("latest_work_update") %}
+                            {% if work_update %}
+                                {% for update in complaint.get("work_updates", []) %}
+                                    <strong>{{ update.status }}</strong>
+                                    <p class="verification-note">{{ update.note }}</p>
+                                    <small>{{ update.created_at }} · {{ update.engineer_name }}</small>
+                                    {% if update.photo %}
+                                        <p><a href="{{ url_for('static', filename='uploads/' ~ update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
+                                    {% endif %}
+                                    {% if not loop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="ai-info">No engineer update yet</span>
+                            {% endif %}
+                        </td>
 
+                        <!-- REPAIR VERIFICATION -->
+                        <td>
+                            {% set verification = complaint.get("latest_verification") %}
+                            {% if verification %}
+                                <span class="badge {% if verification.review_status == 'Approved' %}completed{% elif verification.review_status == 'Pending Review' %}medium{% else %}pending{% endif %}">{{ verification.review_status }}</span>
+                                <p class="verification-note">{{ verification.note }}</p>
+                                <a href="{{ url_for('static', filename='uploads/' ~ verification.photo) }}" target="_blank" rel="noopener">View repair photo</a>
+                                {% if verification.review_status == 'Pending Review' %}
+                                    <form action="/review-repair-verification/{{ verification.id }}" method="POST" class="compact-form">
+                                        <button type="submit" name="decision" value="approve" class="action-button">Approve</button>
+                                        <button type="submit" name="decision" value="rework" class="action-button">Request rework</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <span class="ai-info">No verification submitted</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- STATUS ACTION -->
+                        <td>
                             <form
                                 action="/update-status/{{ complaint_id }}"
                                 method="POST"
@@ -1013,7 +1328,7 @@
                     <tr>
 
                         <td
-                            colspan="6"
+                            colspan="9"
                             style="text-align:center;"
                         >
 

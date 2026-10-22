@@ -878,15 +878,25 @@ textarea {
                 Use My Current Location
             </button>
 
-            <p id="locationText">
-                Location not selected
+            <p id="locationText" aria-live="polite">
+                Use GPS or enter a location manually below.
             </p>
 
+            <label for="location">
+                Address, area, or landmark
+            </label>
+
             <input
-                type="hidden"
+                type="text"
                 id="location"
                 name="location"
+                placeholder="Example: Haridwar Railway Station, Haridwar"
+                autocomplete="street-address"
             >
+
+            <small>
+                “GPS can fill this field, or you can enter a street, area, or landmark manually. Location is optional.”
+            </small>
 
         </div>
 
@@ -1046,7 +1056,7 @@ function getLocation() {
     if (!navigator.geolocation) {
 
         locationText.textContent =
-            "Location is not supported by this browser.";
+            "GPS is not supported by this browser. Enter the location manually below.";
 
         return;
     }
@@ -1079,16 +1089,46 @@ function getLocation() {
 
         },
 
-        function() {
+        function(error) {
 
-            locationText.textContent =
-                "Unable to get location. You can continue without it.";
+            if (error && error.code === error.PERMISSION_DENIED) {
+                locationText.textContent =
+                    "Location permission was denied. Enter an address manually or allow location access and try again.";
+            } else if (error && error.code === error.POSITION_UNAVAILABLE) {
+                locationText.textContent =
+                    "GPS location is unavailable right now. Enter an address or landmark manually.";
+            } else if (error && error.code === error.TIMEOUT) {
+                locationText.textContent =
+                    "GPS lookup timed out. Try again or enter an address manually.";
+            } else {
+                locationText.textContent =
+                    "Unable to get GPS location. You can enter an address manually below.";
+            }
 
         }
 
     );
 
 }
+
+const manualLocationInput =
+    document.getElementById("location");
+
+const locationStatus =
+    document.getElementById("locationText");
+
+manualLocationInput.addEventListener(
+    "input",
+    function() {
+        if (manualLocationInput.value.trim()) {
+            locationStatus.textContent =
+                "Location entered. You can edit it before submitting.";
+        } else {
+            locationStatus.textContent =
+                "Use GPS or enter a location manually below.";
+        }
+    }
+);
 
 
 /* =========================================================

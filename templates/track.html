@@ -198,6 +198,29 @@
             color: #123b5d;
         }
 
+        .repair-photo-box {
+            margin-top: 18px;
+            padding: 18px;
+            background: #f0f9f6;
+            border: 1px solid #cce9df;
+            border-radius: 10px;
+        }
+
+        .repair-photo-box h3 {
+            margin: 0 0 8px;
+            color: #125b4c;
+        }
+
+        .repair-photo {
+            display: block;
+            width: 100%;
+            max-height: 440px;
+            margin-top: 14px;
+            object-fit: contain;
+            background: #e8eef2;
+            border-radius: 8px;
+        }
+
         @media (max-width: 700px) {
 
             .container {
@@ -564,6 +587,49 @@
                     {% endif %}
 
                 </div>
+
+
+                <!-- ================================================= -->
+                <!-- ENGINEER REPAIR PHOTO -->
+                <!-- ================================================= -->
+
+                {% if repair_verification %}
+
+                    <div class="repair-photo-box">
+
+                        <h3>📷 Engineer Repair Photo</h3>
+
+                        <p>
+                            Repair verification:
+                            <strong>{{ repair_verification.get("review_status", "Pending Review") }}</strong>
+                        </p>
+
+                        {% if repair_verification.get("note") %}
+                            <p>{{ repair_verification.get("note") }}</p>
+                        {% endif %}
+
+                        {% if repair_verification.get("photo") %}
+                            <a href="{{ url_for('static', filename='uploads/' ~ repair_verification.get('photo')) }}" target="_blank" rel="noopener">
+                                <img
+                                    class="repair-photo"
+                                    src="{{ url_for('static', filename='uploads/' ~ repair_verification.get('photo')) }}"
+                                    alt="Road repair photo submitted by the engineer for complaint {{ complaint_id }}"
+                                    loading="lazy"
+                                >
+                            </a>
+                        {% else %}
+                            <p>The engineer has not uploaded a repair photo yet.</p>
+                        {% endif %}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="step">
+                        The engineer’s repair photo will appear here after it is submitted.
+                    </div>
+
+                {% endif %}
 
 
                 <!-- ================================================= -->

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineer Dashboard | AI Road Guardian</title>
+<style>
+
+:root{--navy:#102f4f;--navy-deep:#0b2239;--blue:#1769aa;--teal:#12806a;--ink:#182b3e;--muted:#65788a;--line:#e3eaf1;--canvas:#f3f7fb}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(ellipse at 10% 0%,#e4f2fa 0,transparent 34%),var(--canvas);color:var(--ink);line-height:1.5}
+header{background:linear-gradient(115deg,var(--navy-deep),#174d75);color:white;padding:22px clamp(20px,4vw,56px);display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;box-shadow:0 8px 24px rgba(10,36,59,.16)}
+header h1{margin:0;font-size:clamp(23px,3vw,30px);letter-spacing:-.4px}header p{margin:5px 0 0;color:#d7e6f2}
+.header-actions{display:flex;gap:10px;flex-wrap:wrap}.home-button,.logout-button,.button{display:inline-block;border:0;border-radius:8px;padding:10px 15px;text-decoration:none;font-weight:bold;cursor:pointer;transition:transform .16s ease,box-shadow .16s ease,opacity .16s ease}.home-button{background:#fff;color:var(--navy)}.logout-button{background:#dc2626;color:#fff}.button{background:var(--blue);color:white}.home-button:hover,.logout-button:hover,.button:hover{transform:translateY(-1px);box-shadow:0 5px 13px rgba(16,47,79,.18)}
+.container{max-width:1440px;margin:auto;padding:clamp(20px,3vw,38px)}
+.welcome{padding:4px 2px 22px}.welcome h2{font-size:clamp(23px,3vw,30px);letter-spacing:-.35px;margin:0 0 5px;color:var(--navy)}.welcome p{color:var(--muted);margin:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}.stat-card{background:#fff;border:1px solid rgba(221,231,239,.9);border-radius:16px;padding:20px 22px;box-shadow:0 4px 14px rgba(29,58,83,.055);transition:transform .18s ease,box-shadow .18s ease}.stat-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(29,58,83,.1)}.stat-card h3{margin:0;color:var(--muted);font-size:14px;font-weight:600}.number{font-size:36px;line-height:1.15;font-weight:bold;color:var(--navy);margin-top:10px}.teal{color:var(--teal)}.orange{color:#d97706}
+.panel,.card{background:#fff;border:1px solid rgba(221,231,239,.9);border-radius:16px;padding:clamp(18px,2.2vw,28px);box-shadow:0 5px 18px rgba(29,58,83,.055);margin-bottom:18px}.panel h2,.card h2{color:var(--navy);margin-top:0;letter-spacing:-.2px}.panel h2{font-size:21px}.card h2{font-size:20px}
+.filter{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.filter input,.card textarea,.card input[type=file],.card input[type=text],.card select{padding:10px;border:1px solid #d3dde7;border-radius:8px;font:inherit}.filter input{min-width:240px}.filter input:focus,.card textarea:focus,.card input:focus,.card select:focus{outline:3px solid rgba(23,105,170,.14);border-color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.muted{color:var(--muted)}.badge{display:inline-block;padding:6px 10px;border-radius:18px;background:#e0e7ff;color:#3730a3;font-weight:bold;font-size:12px;letter-spacing:.1px}.card form.verify{border-top:1px solid var(--line);margin-top:16px;padding-top:16px}.card form.verify h3{margin:0 0 12px;color:var(--navy)}.card textarea{display:block;width:100%;min-height:90px;margin:8px 0}.card input[type=file]{display:block;margin:8px 0 12px;max-width:100%}.empty{padding:18px;background:#f8fafc;border:1px dashed #cbd8e4;border-radius:10px}.notification-item{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}.notification-item:last-child{border-bottom:0}.notification-item a{color:var(--navy);font-weight:bold}.notification-item small{color:var(--muted)}.notification-item form{margin-left:auto}.notification-panel h2{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.footer-note{text-align:center;color:var(--muted);padding:8px 0 12px}
+@media(max-width:700px){header{padding:18px 16px}.container{padding:20px 14px}.stats{gap:12px}.stat-card{padding:18px}.panel,.card{padding:17px}.panel h2{font-size:19px}.filter input{min-width:0;width:100%}.filter label{width:100%}}
+
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🛣️ AI Road Guardian</h1><p>Engineer Dashboard</p></div>
+  <nav class="header-actions"><a class="home-button" href="/government-login">Government sign-in</a><a class="home-button" href="/">Home</a><a class="logout-button" href="/engineer-logout">Sign out</a></nav>
+</header>
+<main class="container">
+  <section class="welcome">
+    <h2>Engineer Dashboard</h2>
+    <p>Welcome, {{ engineer_name }}. Claim new reports, share repair progress, and submit completed work for review.</p>
+  </section>
+  {% set queue_stats = namespace(unclaimed=0, active=0, reviews=0) %}
+  {% for item in complaints.values() %}
+    {% if not item.get('assigned_engineer') %}{% set queue_stats.unclaimed = queue_stats.unclaimed + 1 %}{% endif %}
+    {% if item.get('status') == 'In Progress' %}{% set queue_stats.active = queue_stats.active + 1 %}{% endif %}
+    {% if item.get('latest_verification') and item.latest_verification.review_status == 'Pending Review' %}{% set queue_stats.reviews = queue_stats.reviews + 1 %}{% endif %}
+  {% endfor %}
+  <section class="stats">
+    <div class="stat-card"><h3>Reports in this view</h3><div class="number">{{ complaints|length }}</div></div>
+    <div class="stat-card"><h3>New to claim</h3><div class="number teal">{{ queue_stats.unclaimed }}</div></div>
+    <div class="stat-card"><h3>Repairs in progress</h3><div class="number orange">{{ queue_stats.active }}</div></div>
+    <div class="stat-card"><h3>Awaiting review</h3><div class="number">{{ queue_stats.reviews }}</div></div>
+  </section>
+  <section class="panel notification-panel">
+    <h2>🔔 Engineer Notifications <span class="badge">{{ unread_notification_count }} unread</span></h2>
+    {% for notice in notifications %}
+      <div class="notification-item"><a href="/track?id={{ notice.complaint_id }}">{{ notice.message }}</a><small>{{ notice.created_at }}</small>
+      {% if not notice.is_read %}<form action="/notifications/{{ notice.id }}/read" method="POST"><input type="hidden" name="audience" value="engineers"><button class="button" type="submit">Mark read</button></form>{% endif %}</div>
+    {% else %}<p class="muted">No notifications yet.</p>{% endfor %}
+  </section>
+  <section class="panel">
+    <h2>New reports</h2>
+    <p class="muted">Unassigned reports appear here for engineers to claim. Assigned reports are visible only to the engineer assigned to them.</p>
+  </section>
+  {% for complaint_id, complaint in complaints.items() %}
+      <article class="card">
+        <h2>#{{ complaint_id }} — {{ complaint.get('problem', 'Road problem') }}</h2>
+        <div class="grid">
+          <p><strong>Location:</strong><br>{{ complaint.get('location', 'Location not provided') }}</p>
+          <p><strong>Priority:</strong><br>{{ complaint.get('priority', 'Medium') }}</p>
+          <p><strong>Current status:</strong><br><span class="badge">{{ complaint.get('status', 'Pending') }}</span></p>
+          <p><strong>Description:</strong><br>{{ complaint.get('description', '') }}</p>
+        </div>
+        {% set verification = complaint.get('latest_verification') %}
+        {% for update in complaint.get('work_updates', []) %}
+          <p><strong>{{ update.status }} · {{ update.created_at }}</strong><br>{{ update.note }}</p>
+          {% if update.photo %}
+            <p><a href="{{ url_for('static', filename='uploads/' ~ update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
+          {% endif %}
+        {% endfor %}
+        {% if verification %}
+          <p><strong>Latest verification:</strong> {{ verification.review_status }} — {{ verification.note }}</p>
+          <p><a href="{{ url_for('static', filename='uploads/' ~ verification.photo) }}" target="_blank" rel="noopener">View submitted repair photo</a></p>
+        {% endif %}
+        {% if not complaint.get('assigned_engineer') %}
+          <form class="verify" action="/claim-complaint/{{ complaint_id }}" method="POST">
+            <p><strong>Claim this complaint</strong></p>
+            <button class="button" type="submit">Claim complaint</button>
+          </form>
+        {% elif complaint.get('assigned_engineer_id') == session.get('engineer_id') and complaint.get('status') != 'Completed' %}
+          <form class="verify" action="/post-engineer-update/{{ complaint_id }}" method="POST" enctype="multipart/form-data">
+            <h3>Post a work update</h3>
+            <label for="update-note-{{ complaint_id }}"><strong>Progress note</strong></label>
+            <textarea id="update-note-{{ complaint_id }}" name="note" required placeholder="What work has started or been completed?"></textarea>
+            <label for="update-status-{{ complaint_id }}"><strong>Status</strong></label>
+            <select id="update-status-{{ complaint_id }}" name="status">
+              <option value="Engineer Assigned" {% if complaint.get('status') == 'Engineer Assigned' %}selected{% endif %}>Engineer Assigned</option>
+              <option value="In Progress" {% if complaint.get('status') != 'Engineer Assigned' %}selected{% endif %}>In Progress</option>
+            </select>
+            <label for="update-photo-{{ complaint_id }}"><strong>Progress photo (optional)</strong></label>
+            <input id="update-photo-{{ complaint_id }}" type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+            <button class="button" type="submit">Publish work update</button>
+          </form>
+          <form class="verify" action="/submit-repair-verification/{{ complaint_id }}" method="POST" enctype="multipart/form-data">
+            <label for="note-{{ complaint_id }}"><strong>Repair work performed / verification note</strong></label>
+            <textarea id="note-{{ complaint_id }}" name="note" required placeholder="Describe the repair and what was checked"></textarea>
+            <label for="photo-{{ complaint_id }}"><strong>After-repair photo (JPG, PNG, or WEBP)</strong></label>
+            <input id="photo-{{ complaint_id }}" type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+            <button class="button" type="submit">Submit for government review</button>
+          </form>
+        {% else %}
+          <p><strong>Government approved this repair.</strong></p>
+        {% endif %}
+      </article>
+    {% else %}
+      <section class="empty">No unclaimed complaints or reports assigned to this engineer were found.</section>
+    {% endfor %}
+</main>
+</body>
+</html>
