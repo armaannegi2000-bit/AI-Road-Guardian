@@ -95,6 +95,91 @@ def generate_gemini_content(contents, config=None):
     raise RuntimeError("No Gemini model was available.")
 
 
+def _parse_gemini_json_response(response):
+    """Read structured output when available, with a safe text JSON fallback."""
+    parsed = getattr(response, "parsed", None)
+    if isinstance(parsed, dict):
+        return parsed
+    if parsed is not None and hasattr(parsed, "model_dump"):
+        parsed = parsed.model_dump()
+        if isinstance(parsed, dict):
+            return parsed
+
+    text = (getattr(response, "text", None) or "").strip()
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE).strip()
+    if not text:
+        raise ValueError("Gemini returned no structured JSON content.")
+
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        # Recover a JSON object if the model added a short preamble or suffix.
+        start = text.find("{")
+        if start < 0:
+            raise ValueError("Gemini response did not contain a JSON object.")
+        value, _end = json.JSONDecoder().raw_decode(text[start:])
+
+    if not isinstance(value, dict):
+        raise ValueError("Gemini response was not a JSON object.")
+    return value
+
+
+def generate_gemini_json(contents, config=None, required_fields=(), enum_fields=None):
+    """Try each configured model until it returns usable structured JSON."""
+    if client is None:
+        raise RuntimeError("Gemini client is not configured.")
+
+    models = [GEMINI_MODEL]
+    if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
+        models.append(GEMINI_FALLBACK_MODEL)
+
+    last_error = None
+    for index, model_name in enumerate(models):
+        for attempt in range(2):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=config
+                )
+                result = _parse_gemini_json_response(response)
+                missing = [field for field in required_fields if field not in result]
+                if missing:
+                    raise ValueError("Gemini JSON omitted required fields: " + ", ".join(missing))
+                for field, allowed_values in (enum_fields or {}).items():
+                    if result.get(field) not in allowed_values:
+                        raise ValueError(f"Gemini returned an invalid {field} value.")
+                return result, model_name
+            except Exception as error:
+                last_error = error
+                code = getattr(error, "code", None)
+                status = str(getattr(error, "status", "")).upper()
+                message = str(error).upper()
+                retryable = (
+                    code in (408, 429, 500, 502, 503, 504)
+                    or status in {"UNAVAILABLE", "RESOURCE_EXHAUSTED", "INTERNAL", "DEADLINE_EXCEEDED"}
+                    or any(marker in message for marker in (
+                        "408", "429", "500", "502", "503", "504",
+                        "UNAVAILABLE", "RESOURCE_EXHAUSTED", "HIGH DEMAND"
+                    ))
+                )
+
+                if retryable and attempt == 0:
+                    print(f"Gemini model {model_name} had a temporary error; retrying once.")
+                    time.sleep(1)
+                    continue
+
+                break
+
+        if index + 1 < len(models):
+            print(
+                f"Gemini model {model_name} did not return usable JSON; "
+                f"trying fallback model {models[index + 1]}."
+            )
+
+    raise last_error or RuntimeError("No Gemini model returned usable JSON.")
+
+
 # =========================================================
 # FLASK SETUP
 # =========================================================
@@ -987,7 +1072,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
         # Generate AI response
         # -------------------------------------------------
 
-        response, analysis_model = generate_gemini_content(
+        ai_result, analysis_model = generate_gemini_json(
             contents=[
                 uploaded_file,
                 prompt
@@ -1024,50 +1109,26 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                     ]
                 },
                 max_output_tokens=800
-            )
-
+            ),
+            required_fields=(
+                "issue_type",
+                "visible_evidence",
+                "estimated_depth_cm",
+                "depth_reference",
+                "depth_confidence",
+                "priority",
+                "visual_confidence",
+                "possible_cause",
+                "recommendation",
+                "requires_site_inspection",
+                "limitations"
+            ),
+            enum_fields={
+                "depth_confidence": {"Low", "Medium", "High"},
+                "priority": {"Low", "Medium", "High"},
+                "visual_confidence": {"Low", "Medium", "High"}
+            }
         )
-
-
-        result = (
-            response.text or ""
-        ).strip()
-
-
-        # -------------------------------------------------
-        # Remove accidental Markdown fences
-        # -------------------------------------------------
-
-        result = result.replace(
-            "```json",
-            ""
-        )
-
-        result = result.replace(
-            "```",
-            ""
-        )
-
-        result = result.strip()
-
-
-        # -------------------------------------------------
-        # Parse JSON
-        # -------------------------------------------------
-
-        ai_result = json.loads(
-            result
-        )
-
-
-        if not isinstance(
-            ai_result,
-            dict
-        ):
-
-            raise ValueError(
-                "Gemini response was not a JSON object."
-            )
 
 
         # -------------------------------------------------
@@ -1169,11 +1230,12 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
     # INVALID JSON
     # =====================================================
 
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, ValueError) as error:
 
         print(
-            "Gemini returned invalid JSON."
+            "Gemini did not return valid structured analysis:"
         )
+        print(error)
 
 
         return {
