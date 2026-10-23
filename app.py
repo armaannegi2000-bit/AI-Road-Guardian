@@ -18,6 +18,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # serialize lookups so this app process stays within its request-rate policy.
 _NOMINATIM_LOCK = threading.Lock()
 _NOMINATIM_LAST_REQUEST = 0.0
+_NOMINATIM_COOLDOWN_UNTIL = 0.0
 _NOMINATIM_CACHE = {}
 
 # =========================================================
@@ -393,6 +394,19 @@ def init_database():
         SET location = 'Location not provided'
         WHERE location IS NULL
            OR location = ''
+        """
+    )
+
+
+    # Keep successful reverse-geocoding results across app restarts so
+    # repeat lookups do not consume more requests from the public service.
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS reverse_geocoding_cache (
+            coordinates TEXT PRIMARY KEY,
+            address TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
         """
     )
 
@@ -1332,20 +1346,47 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
 # =========================================================
 
 def get_location_name(latitude, longitude):
-
     try:
-
         latitude = float(latitude)
         longitude = float(longitude)
-        cache_key = (round(latitude, 6), round(longitude, 6))
+    except (TypeError, ValueError):
+        return "Location unavailable"
 
+    coordinates = f"{latitude:.6f}, {longitude:.6f}"
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return coordinates
+
+    cache_key = (round(latitude, 6), round(longitude, 6))
+    cache_key_text = coordinates
+
+    try:
+        cached_address = _NOMINATIM_CACHE.get(cache_key)
+        if not cached_address:
+            connection = get_db()
+            try:
+                row = connection.execute(
+                    "SELECT address FROM reverse_geocoding_cache WHERE coordinates = ?",
+                    (cache_key_text,)
+                ).fetchone()
+                cached_address = row["address"] if row else None
+            finally:
+                connection.close()
+
+        if cached_address:
+            _NOMINATIM_CACHE[cache_key] = cached_address
+            return cached_address
+
+        global _NOMINATIM_LAST_REQUEST, _NOMINATIM_COOLDOWN_UNTIL
         with _NOMINATIM_LOCK:
             cached_address = _NOMINATIM_CACHE.get(cache_key)
             if cached_address:
                 return cached_address
 
-            global _NOMINATIM_LAST_REQUEST
-            wait_seconds = 1.1 - (time.monotonic() - _NOMINATIM_LAST_REQUEST)
+            now = time.monotonic()
+            if now < _NOMINATIM_COOLDOWN_UNTIL:
+                return coordinates
+
+            wait_seconds = 1.1 - (now - _NOMINATIM_LAST_REQUEST)
             if wait_seconds > 0:
                 time.sleep(wait_seconds)
 
@@ -1360,10 +1401,28 @@ def get_location_name(latitude, longitude):
                     "addressdetails": 1
                 },
                 headers={
-                    "User-Agent": "AI-Road-Guardian/1.0"
+                    "User-Agent": (
+                        "AI Road Guardian/1.0 "
+                        "(+https://ai-road-guardian.onrender.com)"
+                    )
                 },
-                timeout=10
+                timeout=8
             )
+
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After", "")
+                try:
+                    cooldown_seconds = max(60, int(retry_after))
+                except (TypeError, ValueError):
+                    cooldown_seconds = 60
+                _NOMINATIM_COOLDOWN_UNTIL = (
+                    time.monotonic() + min(cooldown_seconds, 3600)
+                )
+                print(
+                    "Reverse geocoding is rate limited; preserving GPS "
+                    f"coordinates. Retry-After: {retry_after or 'unspecified'}"
+                )
+                return coordinates
 
             response.raise_for_status()
             data = response.json()
@@ -1394,19 +1453,29 @@ def get_location_name(latitude, longitude):
                 for value in [road, locality, district, state, country]:
                     if value and value not in parts:
                         parts.append(value)
-                readable_address = ", ".join(parts) if parts else f"{latitude}, {longitude}"
+                readable_address = ", ".join(parts) if parts else coordinates
 
             _NOMINATIM_CACHE[cache_key] = readable_address
+            connection = get_db()
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO reverse_geocoding_cache (coordinates, address)
+                    VALUES (?, ?)
+                    ON CONFLICT(coordinates) DO UPDATE SET
+                        address = excluded.address,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (cache_key_text, readable_address)
+                )
+                connection.commit()
+            finally:
+                connection.close()
             return readable_address
 
     except Exception as error:
-
-        print(
-            "Reverse geocoding error:",
-            error
-        )
-
-        return f"{latitude}, {longitude}"
+        print("Reverse geocoding error:", error)
+        return coordinates
 
 
 def parse_gps_coordinates(location):
