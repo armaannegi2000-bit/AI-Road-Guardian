@@ -2,753 +2,839 @@
 <html lang="en">
 
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>
-AI Road Guardian
-</title>
-
-
-<style>
-
-*{
-    box-sizing:border-box;
-}
-
-
-body{
-
-    margin:0;
-
-    font-family:Arial,sans-serif;
-
-    color:#172033;
-
-    background:#f4f8fc;
-}
-
-
-
-nav{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:18px 8%;
-
-    background:white;
-
-    box-shadow:
-    0 2px 12px rgba(0,0,0,0.08);
-
-}
-
-
-
-.logo{
-
-    font-size:23px;
-
-    font-weight:bold;
-
-    color:#123b5d;
-
-}
-
-
-
-.nav-links{
-
-    display:flex;
-
-    gap:12px;
-
-    flex-wrap:wrap;
-
-}
-
-
-
-.nav-button{
-
-    text-decoration:none;
-
-    background:#123b5d;
-
-    color:white;
-
-    padding:10px 17px;
-
-    border-radius:8px;
-
-    font-weight:bold;
-
-}
-
-
-
-
-.hero{
-
-    min-height:560px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    text-align:center;
-
-    padding:70px 20px;
-
-    background:
-
-    linear-gradient(
-        135deg,
-        #0f3657,
-        #1976d2
-    );
-
-    color:white;
-
-}
-
-
-
-.hero-content{
-
-    max-width:850px;
-
-}
-
-
-
-.badge{
-
-    display:inline-block;
-
-    padding:9px 15px;
-
-    border-radius:30px;
-
-    background:
-    rgba(255,255,255,0.16);
-
-    margin-bottom:20px;
-
-}
-
-
-
-.hero h1{
-
-    font-size:
-
-    clamp(
-        38px,
-        7vw,
-        72px
-    );
-
-    margin:0 0 18px;
-
-}
-
-
-
-.hero p{
-
-    max-width:700px;
-
-    margin:0 auto 30px;
-
-    font-size:19px;
-
-    line-height:1.7;
-
-    color:#e5f1ff;
-
-}
-
-
-
-.hero-buttons{
-
-    display:flex;
-
-    justify-content:center;
-
-    gap:15px;
-
-    flex-wrap:wrap;
-
-}
-
-
-
-.button{
-
-    display:inline-block;
-
-    padding:14px 22px;
-
-    border-radius:9px;
-
-    text-decoration:none;
-
-    font-weight:bold;
-
-}
-
-
-
-.primary{
-
-    background:white;
-
-    color:#123b5d;
-
-}
-
-
-
-.secondary{
-
-    color:white;
-
-    border:
-    1px solid rgba(255,255,255,0.7);
-
-}
-
-
-
-.section{
-
-    max-width:1150px;
-
-    margin:auto;
-
-    padding:70px 20px;
-
-}
-
-
-
-.section-title{
-
-    text-align:center;
-
-    margin-bottom:40px;
-
-}
-
-
-
-.section-title h2{
-
-    font-size:34px;
-
-    color:#123b5d;
-
-}
-
-
-
-.section-title p{
-
-    color:#64748b;
-
-}
-
-
-
-.features{
-
-    display:grid;
-
-    grid-template-columns:
-
-    repeat(
-        auto-fit,
-        minmax(230px,1fr)
-    );
-
-    gap:22px;
-
-}
-
-
-
-.card{
-
-    background:white;
-
-    padding:27px;
-
-    border-radius:15px;
-
-    box-shadow:
-
-    0 7px 22px rgba(0,0,0,0.08);
-
-}
-
-
-
-.icon{
-
-    font-size:35px;
-
-}
-
-
-
-.card h3{
-
-    color:#123b5d;
-
-}
-
-
-
-.card p{
-
-    color:#64748b;
-
-    line-height:1.6;
-
-}
-
-
-
-.steps{
-
-    display:grid;
-
-    grid-template-columns:
-
-    repeat(
-        auto-fit,
-        minmax(200px,1fr)
-    );
-
-    gap:20px;
-
-}
-
-
-
-.step{
-
-    text-align:center;
-
-}
-
-
-
-.step-number{
-
-    width:52px;
-
-    height:52px;
-
-    margin:auto auto 15px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    border-radius:50%;
-
-    background:#1976d2;
-
-    color:white;
-
-    font-size:22px;
-
-    font-weight:bold;
-
-}
-
-
-
-footer{
-
-    text-align:center;
-
-    padding:25px;
-
-    background:#123b5d;
-
-    color:#dbeafe;
-
-}
-
-
-
-@media(max-width:650px){
-
-    nav{
-
-        padding:15px 5%;
-
-    }
-
-
-    .logo{
-
-        font-size:18px;
-
-    }
-
-
-    .hero{
-
-        min-height:500px;
-
-    }
-
-}
-
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f4f8fc">
+    <title>AI Road Guardian | Safer roads start with one clear report</title>
+
+    <style>
+        :root {
+            --navy: #123b5d;
+            --deep: #0b5d8c;
+            --blue: #1976d2;
+            --teal: #1976d2;
+            --mint: #e8f4f8;
+            --amber: #1976d2;
+            --ink: #1f2937;
+            --muted: #62717d;
+            --paper: #f4f8fc;
+            --white: #ffffff;
+            --line: #d9e4ee;
+            --shadow: 0 18px 48px rgba(17, 45, 62, 0.09);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            background: var(--paper);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .site-header {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.97);
+            border-bottom: 1px solid rgba(18, 59, 93, 0.07);
+        }
+
+        .nav-wrap {
+            width: min(100% - 48px, 1320px);
+            min-height: 78px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 28px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            color: var(--navy);
+            text-decoration: none;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        .brand-mark {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            background: var(--mint);
+            font-size: 22px;
+        }
+
+        .main-nav,
+        .access-nav {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .main-nav a,
+        .access-nav a {
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            color: #566775;
+            transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+        }
+
+        .main-nav a:hover,
+        .access-nav a:hover {
+            color: var(--teal);
+        }
+
+        .access-nav {
+            gap: 10px;
+        }
+
+        .access-nav .staff-link {
+            padding: 10px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            color: var(--navy);
+        }
+
+        .access-nav .staff-link:hover {
+            background: #f1f7fb;
+            transform: translateY(-1px);
+        }
+
+        .access-nav .report-link {
+            padding: 12px 17px;
+            border-radius: 999px;
+            background: var(--teal);
+            color: white;
+        }
+
+        .access-nav .report-link:hover {
+            color: white;
+            background: #0b5d8c;
+            transform: translateY(-1px);
+        }
+
+        .hero {
+            min-height: 640px;
+            position: relative;
+            display: grid;
+            place-items: center;
+            isolation: isolate;
+            overflow: hidden;
+            padding: 75px 24px 112px;
+            color: white;
+            text-align: center;
+            background:
+                linear-gradient(115deg, rgba(7, 40, 66, 0.86), rgba(11, 93, 140, 0.70)),
+                url("https://images.unsplash.com/photo-1661158199166-5eeb99561ad7?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=2200") center 55% / cover no-repeat;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+            opacity: 0.19;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+            background-size: 54px 54px;
+            mask-image: linear-gradient(to bottom, black, transparent 88%);
+        }
+
+        .hero-glow {
+            position: absolute;
+            z-index: -1;
+            top: -230px;
+            left: 50%;
+            width: 720px;
+            height: 500px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(25, 118, 210, 0.18);
+            filter: blur(50px);
+        }
+
+
+        .hero-content {
+            width: min(940px, 100%);
+            margin: auto;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 22px;
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e5f2ff;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--amber);
+            box-shadow: 0 0 12px rgba(25, 118, 210, 0.8);
+        }
+
+        .hero h1 {
+            color: #ffffff;
+            max-width: 900px;
+            margin: 0 auto 18px;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(42px, 7vw, 78px);
+            line-height: 1.03;
+            letter-spacing: -2px;
+            text-wrap: balance;
+        }
+
+        .hero h1 span {
+            color: #9dccff;
+        }
+
+        .hero-copy {
+            max-width: 690px;
+            margin: 0 auto;
+            color: rgba(241, 248, 248, 0.86);
+            font-size: clamp(16px, 2vw, 19px);
+            line-height: 1.75;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 13px;
+            margin-top: 30px;
+        }
+
+        .button {
+            min-height: 52px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 0 23px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 800;
+            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button-light {
+            background: white;
+            color: var(--navy);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.14);
+        }
+
+        .button-light:hover {
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-outline {
+            border-color: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+
+        .button-outline:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .hero-points {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 22px;
+            margin-top: 30px;
+            color: rgba(235, 244, 255, 0.9);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .hero-points span::before {
+            content: "✓";
+            margin-right: 7px;
+            color: #9dccff;
+            font-weight: 900;
+        }
+
+        .section {
+            width: min(1160px, 100% - 48px);
+            margin: 0 auto;
+            padding: 88px 0;
+        }
+
+        .features-section {
+            padding-bottom: 48px;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 30px;
+            margin-bottom: 34px;
+        }
+
+        .section-kicker {
+            margin: 0 0 10px;
+            color: var(--teal);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .section-heading h2,
+        .steps-title h2 {
+            max-width: 620px;
+            margin: 0;
+            color: var(--navy);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(31px, 4vw, 46px);
+            line-height: 1.12;
+            letter-spacing: -0.8px;
+        }
+
+        .section-heading > p {
+            max-width: 410px;
+            margin: 0 0 4px;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            min-height: 260px;
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--white);
+            box-shadow: 0 8px 28px rgba(18, 59, 93, 0.045);
+            transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+        }
+
+        .feature-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 22px;
+            border-radius: 16px;
+            background: #e8f4f8;
+            font-size: 25px;
+        }
+
+        .feature-card:nth-child(2) .feature-icon {
+            background: #edf4fc;
+        }
+
+        .feature-card:nth-child(3) .feature-icon {
+            background: #e1efff;
+        }
+
+        .feature-card h3 {
+            margin: 0 0 10px;
+            color: var(--navy);
+            font-size: 19px;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .transparency-box {
+            display: grid;
+            grid-template-columns: 54px minmax(0, 1fr);
+            align-items: center;
+            gap: 18px;
+            margin-top: 52px;
+            padding: 24px 28px;
+            border: 1px solid var(--line);
+            border-left: 5px solid var(--blue);
+            border-radius: 18px;
+            background: linear-gradient(120deg, #edf5ff, #f4f8fc);
+            box-shadow: 0 8px 28px rgba(18, 59, 93, 0.055);
+        }
+
+        .transparency-icon {
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+            border-radius: 16px;
+            background: white;
+            font-size: 24px;
+        }
+
+        .transparency-kicker {
+            margin: 0 0 5px;
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .transparency-box h3 {
+            margin: 0 0 6px;
+            color: var(--navy);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 22px;
+        }
+
+        .transparency-box p:not(.transparency-kicker) {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .steps-section {
+            padding-top: 48px;
+            padding-bottom: 96px;
+        }
+
+        .steps-title {
+            margin-bottom: 34px;
+            text-align: center;
+        }
+
+        .steps-title .section-kicker {
+            margin-bottom: 11px;
+        }
+
+        .steps-title h2 {
+            margin: auto;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .step-card {
+            padding: 24px 24px 26px;
+            border-top: 2px solid #c7dced;
+        }
+
+        .step-number {
+            margin-bottom: 18px;
+            color: #1976d2;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 42px;
+            line-height: 1;
+        }
+
+        .step-card h3 {
+            margin: 0 0 9px;
+            color: var(--navy);
+            font-size: 17px;
+        }
+
+        .step-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .site-footer {
+            padding: 30px 24px;
+            background: var(--deep);
+            color: rgba(240, 248, 247, 0.82);
+        }
+
+        .footer-inner {
+            width: min(1160px, 100%);
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .footer-brand {
+            color: white;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .footer-note {
+            margin: 6px 0 0;
+            color: rgba(240, 248, 247, 0.62);
+            font-size: 12px;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .footer-links a {
+            color: rgba(240, 248, 247, 0.82);
+            font-size: 13px;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 940px) {
+            .nav-wrap {
+                width: min(100% - 32px, 1320px);
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 12px 24px;
+                padding: 14px 0;
+            }
+
+            .main-nav {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+                padding-top: 5px;
+            }
+
+            .feature-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            .nav-wrap {
+                width: calc(100% - 28px);
+                justify-content: space-between;
+            }
+
+            .brand {
+                font-size: 17px;
+            }
+
+            .brand-mark {
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+
+            .main-nav {
+                justify-content: flex-start;
+                gap: 18px;
+                overflow-x: auto;
+                padding: 8px 1px 3px;
+            }
+
+            .main-nav a {
+                white-space: nowrap;
+                font-size: 13px;
+            }
+
+            .access-nav {
+                gap: 7px;
+            }
+
+            .access-nav .staff-link {
+                padding: 9px 10px;
+                font-size: 12px;
+            }
+
+            .access-nav .report-link {
+                display: none;
+            }
+
+            .hero {
+                min-height: 610px;
+                padding: 70px 20px 104px;
+            }
+
+            .hero h1 {
+                font-size: clamp(40px, 12vw, 58px);
+                letter-spacing: -1.3px;
+            }
+
+            .hero-copy {
+                font-size: 16px;
+                line-height: 1.65;
+            }
+
+            .hero-points {
+                gap: 11px 16px;
+                font-size: 12px;
+            }
+
+
+            .section {
+                width: calc(100% - 32px);
+                padding: 64px 0;
+            }
+
+            .features-section {
+                padding-bottom: 30px;
+            }
+
+            .section-heading {
+                display: block;
+                margin-bottom: 24px;
+            }
+
+            .section-heading > p {
+                margin-top: 13px;
+            }
+
+            .section-heading h2,
+            .steps-title h2 {
+                font-size: 34px;
+            }
+
+            .feature-grid,
+            .steps-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .feature-card {
+                min-height: auto;
+                padding: 23px;
+            }
+
+            .transparency-box {
+                margin-top: 40px;
+                grid-template-columns: 44px minmax(0, 1fr);
+                gap: 13px;
+                padding: 18px;
+            }
+
+            .transparency-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 21px;
+            }
+
+            .transparency-box h3 {
+                font-size: 19px;
+            }
+
+            .feature-icon {
+                margin-bottom: 17px;
+            }
+
+            .steps-section {
+                padding-top: 32px;
+                padding-bottom: 72px;
+            }
+
+            .steps-title {
+                margin-bottom: 24px;
+                text-align: left;
+            }
+
+            .steps-title h2 {
+                margin: 0;
+            }
+
+            .step-card {
+                padding: 19px 3px 20px;
+            }
+
+            .footer-inner {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='site-theme.css') }}">
 </head>
 
-
-
 <body>
-
-
-
-<nav>
-
-
-<div class="logo">
-
-🛣️ AI Road Guardian
-
-</div>
-
-
-
-<div class="nav-links">
-
-
-<a
-href="/government-login"
-class="nav-button">
-
-🔒 Government Login
-
-</a>
-
-<a
-href="/engineer-login"
-class="nav-button">
-
-👷 Engineer Login
-
-</a>
-
-
-</div>
-
-
-</nav>
-
-
-
-
-
-<section class="hero">
-
-
-<div class="hero-content">
-
-
-<div class="badge">
-
-🤖 AI-Powered Road Safety
-
-</div>
-
-
-
-<h1>
-
-Safer Roads.
-Smarter Repairs.
-
-</h1>
-
-
-
-<p>
-
-Report road damage,
-upload a photo, receive
-AI-based analysis, and
-track your complaint.
-
-</p>
-
-
-
-
-<div class="hero-buttons">
-
-
-<a
-href="/report"
-class="button primary">
-
-Report a Road Issue
-
-</a>
-
-
-
-<a
-href="/track"
-class="button secondary">
-
-Track My Complaint
-
-</a>
-
-
-
-</div>
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<section class="section">
-
-
-<div class="section-title">
-
-
-<h2>
-
-How AI Road Guardian Helps
-
-</h2>
-
-
-<p>
-
-A simple system for citizens and road maintenance teams.
-
-</p>
-
-
-</div>
-
-
-
-
-<div class="features">
-
-
-
-<div class="card">
-
-<div class="icon">
-📷
-</div>
-
-<h3>
-Upload Evidence
-</h3>
-
-<p>
-Upload photos of potholes, cracks, or road damage.
-</p>
-
-</div>
-
-
-
-
-<div class="card">
-
-<div class="icon">
-🤖
-</div>
-
-<h3>
-AI Analysis
-</h3>
-
-<p>
-AI highlights visible damage and suggests a provisional priority for engineer review.
-</p>
-
-</div>
-
-
-
-
-<div class="card">
-
-<div class="icon">
-📍
-</div>
-
-<h3>
-Location Details
-</h3>
-
-<p>
-Reports include location information for faster action.
-</p>
-
-</div>
-
-
-
-
-<div class="card">
-
-<div class="icon">
-🔎
-</div>
-
-<h3>
-Track Progress
-</h3>
-
-<p>
-Check the status of your road complaint.
-</p>
-
-</div>
-
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-
-<section class="section">
-
-
-<div class="section-title">
-
-
-<h2>
-
-Report in 4 Easy Steps
-
-</h2>
-
-
-</div>
-
-
-
-
-<div class="steps">
-
-
-<div class="step">
-
-<div class="step-number">
-1
-</div>
-
-<h3>
-Upload Photo
-</h3>
-
-</div>
-
-
-
-<div class="step">
-
-<div class="step-number">
-2
-</div>
-
-<h3>
-Add Location
-</h3>
-
-</div>
-
-
-
-<div class="step">
-
-<div class="step-number">
-3
-</div>
-
-<h3>
-Get AI Analysis
-</h3>
-
-</div>
-
-
-
-<div class="step">
-
-<div class="step-number">
-4
-</div>
-
-<h3>
-Track Repair
-</h3>
-
-</div>
-
-
-
-</div>
-
-
-</section>
-
-
-
-
-
-<footer>
-
-© 2026 AI Road Guardian
-
-</footer>
-
-
-
+    <header class="site-header">
+        <div class="nav-wrap">
+            <a class="brand" href="/" aria-label="AI Road Guardian home">
+                <span class="brand-mark" aria-hidden="true">🛣️</span>
+                <span>AI Road Guardian</span>
+            </a>
+
+            <nav class="access-nav" aria-label="Staff access">
+                <a class="staff-link" href="/government-login">Government Login</a>
+                <a class="staff-link" href="/engineer-login">Engineer Login</a>
+                        </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" aria-labelledby="hero-title">
+            <div class="hero-glow" aria-hidden="true"></div>
+            <div class="hero-content">
+                <div class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span> A clearer path from report to repair</div>
+                <h1 id="hero-title">Safer roads start with <span>one clear report.</span></h1>
+                <p class="hero-copy">
+                    Share a road problem with a photo and a GPS point or a familiar landmark.
+                    Follow its progress and see updates in one place.
+                </p>
+                <div class="hero-actions">
+                    <a class="button button-light" href="/report">📷 Report a road issue <span aria-hidden="true">→</span></a>
+                    <a class="button button-outline" href="/track">Track my complaint</a>
+                </div>
+                <div class="hero-points" aria-label="Reporting options">
+                    <span>Photo evidence</span>
+                    <span>GPS or manual location</span>
+                    <span>Status and repair updates</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section features-section" aria-labelledby="features-title">
+            <div class="section-heading">
+                <div>
+                    <p class="section-kicker">Built for clear follow-through</p>
+                    <h2 id="features-title">From the first photo to the latest update.</h2>
+                </div>
+                <p>One shared report helps residents, engineers, and government teams follow the same road issue.</p>
+            </div>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">📸</div>
+                    <h3>Show what needs attention</h3>
+                    <p>Add a road photo, choose the problem type, and describe what you noticed.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">📍</div>
+                    <h3>Share a clear location</h3>
+                    <p>Use GPS or enter a street, area, or landmark manually. If GPS is unavailable, you can still report the issue without a location.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">🤖</div>
+                    <h3>Get an AI-assisted review</h3>
+                    <p>Image analysis can help with initial triage. An engineer should confirm damage and repair decisions on site.</p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon" aria-hidden="true">🧭</div>
+                    <h3>Follow the repair journey</h3>
+                    <p>Use your complaint ID to check status history, work updates, and repair photos when available.</p>
+                </article>
+
+            </div>
+            <div class="transparency-box">
+                <div class="transparency-icon" aria-hidden="true">🔎</div>
+                <div>
+                    <p class="transparency-kicker">Transparency for every mile</p>
+                    <h3>A clearer road ahead starts with transparency.</h3>
+                    <p>Follow recorded complaint statuses and engineer updates as communities across India work toward safer roads.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section steps-section" id="how-it-works" aria-labelledby="steps-title">
+            <div class="steps-title">
+                <p class="section-kicker">Simple by design</p>
+                <h2 id="steps-title">Three steps to keep a road issue visible.</h2>
+            </div>
+
+            <div class="steps-grid">
+                <article class="step-card">
+                    <div class="step-number">01</div>
+                    <h3>Send the report</h3>
+                    <p>Upload a photo and describe the road problem and its location.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-number">02</div>
+                    <h3>Teams review the issue</h3>
+                    <p>Government staff and engineers can review the complaint and record progress.</p>
+                </article>
+
+                <article class="step-card">
+                    <div class="step-number">03</div>
+                    <h3>Track updates</h3>
+                    <p>Return with your complaint ID to see the latest status and repair evidence when posted.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div>
+                <div class="footer-brand">🛣️ AI Road Guardian</div>
+                <p class="footer-note">A clearer path for road reports and repair updates.</p>
+            </div>
+            <nav class="footer-links" aria-label="Footer navigation">
+                <a href="/report">Report a problem</a>
+                <a href="/track">Track a complaint</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+                <a href="/user-guide">User Guide</a>
+                <a href="/admin-guide">Admin Guide</a>
+                <a href="/government-login">Government login</a>
+                <a href="/engineer-login">Engineer login</a>
+            </nav>
+        </div>
+    </footer>
 </body>
 
 </html>
