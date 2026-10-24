@@ -950,6 +950,137 @@ def home():
     )
 
 
+SITE_INFO_PAGES = {
+    "about": {
+        "title": "About AI Road Guardian",
+        "eyebrow": "Safer roads, clearer follow-through",
+        "intro": "AI Road Guardian helps residents report visible road problems and follow the recorded response from public teams and engineers.",
+        "sections": [
+            {
+                "title": "A practical reporting flow",
+                "body": "A citizen can submit a road photo, choose a problem type, describe what they saw, and provide GPS coordinates or a manually entered place.",
+                "items": [
+                    "Each report receives a complaint ID for later tracking.",
+                    "Government staff and engineers can review the complaint and record work updates.",
+                    "Repair photos and verification updates can be shared on the complaint tracking page."
+                ]
+            },
+            {
+                "title": "AI supports review",
+                "body": "Image analysis can help summarize visible evidence and suggest a preliminary priority. It cannot reliably measure damage depth or replace an on-site engineering inspection."
+            },
+            {
+                "title": "Built for transparency",
+                "body": "The goal is to make complaint status and documented repair progress easier for citizens and staff to follow. Updates depend on information entered by authorized staff."
+            }
+        ]
+    },
+    "contact": {
+        "title": "Contact and Support",
+        "eyebrow": "Find the right next step",
+        "intro": "Use the options below for help with a road report or an existing complaint.",
+        "sections": [
+            {
+                "title": "Report a road problem",
+                "body": "Submit a photo, description, and GPS location or nearby address so the issue can be reviewed.",
+                "link": "/report",
+                "link_label": "Report a road problem"
+            },
+            {
+                "title": "Check an existing complaint",
+                "body": "Keep your complaint ID and enter it on the tracking page to see the latest status and any updates or repair photos that have been posted.",
+                "link": "/track",
+                "link_label": "Track a complaint"
+            },
+            {
+                "title": "Local road authority",
+                "body": "This application does not list a verified public phone number or support email. For urgent road hazards or a response from your local authority, use that authority’s official contact channel and include your complaint ID if you have one."
+            }
+        ]
+    },
+    "user_guide": {
+        "title": "User Guide",
+        "eyebrow": "How to report and track a road issue",
+        "intro": "Follow these steps to submit a useful report and check its progress later.",
+        "sections": [
+            {
+                "title": "1. Create a report",
+                "body": "Open the report form, add a clear road photo, select the problem type, and describe what you observed.",
+                "items": [
+                    "Use GPS or enter a street, area, or landmark manually. Location can be left blank.",
+                    "Avoid including private or sensitive information in the photo or description.",
+                    "AI analysis is preliminary and can be unavailable; an engineer should confirm damage in the field."
+                ],
+                "link": "/report",
+                "link_label": "Open report form"
+            },
+            {
+                "title": "2. Save your complaint ID",
+                "body": "After submitting, note the complaint ID shown on the result page. You need it to find this report again."
+            },
+            {
+                "title": "3. Track updates",
+                "body": "Enter the complaint ID on the tracking page to review the recorded status history, work notes, and repair evidence when available.",
+                "link": "/track",
+                "link_label": "Track my complaint"
+            }
+        ]
+    },
+    "admin_guide": {
+        "title": "Admin Guide",
+        "eyebrow": "Government and engineer workflows",
+        "intro": "For staff with authorized accounts. Government and engineer dashboards use separate sign-ins.",
+        "sections": [
+            {
+                "title": "Government staff",
+                "body": "Sign in to the government dashboard to review complaints, use the GIS map for reports with GPS coordinates, and manage the response.",
+                "items": [
+                    "Review the photo, description, location, and AI output as supporting information.",
+                    "Create engineer accounts from the engineer account management page and assign complaints to the appropriate team.",
+                    "Review engineer work updates and submitted repair verification, then record the government review decision."
+                ],
+                "link": "/government-login",
+                "link_label": "Government sign in"
+            },
+            {
+                "title": "Engineers",
+                "body": "Sign in to the separate engineer dashboard to claim available complaints or work on complaints assigned to you.",
+                "items": [
+                    "Post accurate progress notes and status updates; add a work photo when useful.",
+                    "After repair, submit a verification note and an after-repair photo for government review.",
+                    "Citizens can see updates and available repair evidence on their complaint tracking page."
+                ],
+                "link": "/engineer-login",
+                "link_label": "Engineer sign in"
+            },
+            {
+                "title": "Good reporting practice",
+                "body": "Keep statuses and notes factual and timely. Treat AI results as preliminary evidence only; confirm damage, repair scope, and completion through an appropriate field inspection."
+            }
+        ]
+    }
+}
+
+
+@app.route("/about")
+def about_page():
+    return render_template("info_page.html", page=SITE_INFO_PAGES["about"], page_key="about")
+
+
+@app.route("/contact")
+def contact_page():
+    return render_template("info_page.html", page=SITE_INFO_PAGES["contact"], page_key="contact")
+
+
+@app.route("/user-guide")
+def user_guide_page():
+    return render_template("info_page.html", page=SITE_INFO_PAGES["user_guide"], page_key="user_guide")
+
+
+@app.route("/admin-guide")
+def admin_guide_page():
+    return render_template("info_page.html", page=SITE_INFO_PAGES["admin_guide"], page_key="admin_guide")
+
 # =========================================================
 # REPORT PAGE
 # =========================================================

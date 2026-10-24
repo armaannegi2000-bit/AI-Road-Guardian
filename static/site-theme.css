@@ -1,0 +1,68 @@
+:root {
+    --navy: #123b5d;
+    --navy-deep: #123b5d;
+    --deep: #0b5d8c;
+    --blue: #1976d2;
+    --teal: #1976d2;
+    --amber: #1976d2;
+    --ink: #1f2937;
+    --muted: #62717d;
+    --paper: #f4f8fc;
+    --canvas: #f4f8fc;
+    --white: #ffffff;
+    --line: #d9e4ee;
+}
+
+html {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    color: var(--ink, #1f2937);
+    background: var(--paper, #f4f8fc);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h1,
+h2 {
+    color: var(--navy, #123b5d);
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--blue, #1976d2);
+    outline-color: rgba(25, 118, 210, 0.2);
+}
+
+.location-box {
+    background-color: #e8f4f8;
+}
+
+.location-button,
+.submit {
+    background-color: var(--blue, #1976d2);
+    color: #ffffff;
+}
+
+.location-button:hover {
+    background-color: var(--deep, #0b5d8c);
+}
+
+header h1,
+header h2 {
+    color: #ffffff;
+}
+
+.hero h1,
+.hero h2 {
+    color: #ffffff;
+}
