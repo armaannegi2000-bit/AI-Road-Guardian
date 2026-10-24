@@ -1,386 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
-
-<title>Government Login | AI Road Guardian</title>
-
-<style>
-
-* {
-    box-sizing: border-box;
-}
-
-body {
-
-    margin: 0;
-
-    min-height: 100vh;
-
-    display: flex;
-
-    justify-content: center;
-
-    align-items: center;
-
-    font-family: Arial, sans-serif;
-
-    background:
-    linear-gradient(
-        135deg,
-        #123b5d,
-        #1976d2
-    );
-}
-
-
-.login-card {
-
-    width: 90%;
-
-    max-width: 420px;
-
-    background: white;
-
-    padding: 35px;
-
-    border-radius: 18px;
-
-    box-shadow:
-    0 12px 35px
-    rgba(0,0,0,0.25);
-}
-
-
-h1 {
-
-    text-align: center;
-
-    color: #123b5d;
-}
-
-
-.subtitle {
-
-    text-align: center;
-
-    color: #64748b;
-
-    margin-bottom: 25px;
-}
-
-
-label {
-
-    display: block;
-
-    margin-top: 15px;
-
-    margin-bottom: 7px;
-
-    font-weight: bold;
-}
-
-
-input {
-
-    width: 100%;
-
-    padding: 13px;
-
-    border:
-        1px solid #cbd5e1;
-
-    border-radius: 8px;
-
-    font-size: 16px;
-}
-
-
-button {
-
-    width: 100%;
-
-    margin-top: 25px;
-
-    padding: 14px;
-
-    border: none;
-
-    border-radius: 8px;
-
-    background: #1976d2;
-
-    color: white;
-
-    font-size: 16px;
-
-    font-weight: bold;
-
-    cursor: pointer;
-}
-
-
-button:disabled {
-
-    opacity: 0.7;
-}
-
-
-.message {
-
-    display: none;
-
-    margin-top: 20px;
-
-    padding: 12px;
-
-    text-align: center;
-
-    border-radius: 8px;
-
-    font-weight: bold;
-}
-
-
-.success {
-
-    display: block;
-
-    background: #dcfce7;
-
-    color: #166534;
-}
-
-
-.error {
-
-    display: block;
-
-    background: #fee2e2;
-
-    color: #b91c1c;
-}
-
-
-.home-link {
-
-    display: block;
-
-    text-align: center;
-
-    margin-top: 20px;
-
-    text-decoration: none;
-
-    color: #123b5d;
-
-    font-weight: bold;
-}
-
-</style>
-
-</head>
-
-
-<body>
-
-
-<div class="login-card">
-
-
-<h1>
-🛣️ Government Login
-</h1>
-
-
-<p class="subtitle">
-Authorized Officers and Ministers only
-</p>
-
-
-<form id="loginForm">
-
-
-<label>
-Government Email
-</label>
-
-
-<input
-    id="email"
-    type="email"
-    name="username"
-    placeholder="Enter government email"
-    required
->
-
-
-<label>
-Password
-</label>
-
-
-<input
-    id="password"
-    type="password"
-    name="password"
-    placeholder="Enter password"
-    required
->
-
-
-<button
-    id="loginBtn"
-    type="submit">
-
-    Login to Dashboard
-
-</button>
-
-
-</form>
-
-
-<div
-    id="message"
-    class="message">
-</div>
-
-
-<a
-    href="/"
-    class="home-link">
-
-    ← Back to Home
-
-</a>
-
-
-</div>
-
-
-<script>
-
-const form =
-document.getElementById("loginForm");
-
-
-const btn =
-document.getElementById("loginBtn");
-
-
-const message =
-document.getElementById("message");
-
-
-form.addEventListener(
-    "submit",
-    async function(e) {
-
-        e.preventDefault();
-
-
-        btn.innerHTML =
-            "🔄 Verifying credentials...";
-
-        btn.disabled = true;
-
-
-        let formData =
-            new FormData(form);
-
-
-        try {
-
-            let response =
-                await fetch(
-                    "/government-auth",
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
-
-
-            let data =
-                await response.json();
-
-
-            if (data.success) {
-
-                message.style.display =
-                    "block";
-
-                message.className =
-                    "message success";
-
-                message.innerHTML =
-                    "✅ Login successful! Opening dashboard...";
-
-
-                setTimeout(
-                    function() {
-
-                        window.location.href =
-                            "/dashboard";
-
-                    },
-                    1000
-                );
-
-            }
-
-            else {
-
-                message.style.display =
-                    "block";
-
-                message.className =
-                    "message error";
-
-                message.innerHTML =
-                    "❌ Incorrect email or password.";
-
-
-                btn.innerHTML =
-                    "Login to Dashboard";
-
-                btn.disabled = false;
-
-            }
-
-        }
-
-        catch (error) {
-
-            message.style.display =
-                "block";
-
-            message.className =
-                "message error";
-
-            message.innerHTML =
-                "❌ Unable to connect to the server.";
-
-            btn.innerHTML =
-                "Login to Dashboard";
-
-            btn.disabled = false;
-
-        }
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Government Login | AI Road Guardian</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f4f8, #d9eaf7);
+      color: #18334a;
     }
-);
 
-</script>
+    .card {
+      width: min(100%, 440px);
+      background: #fff;
+      padding: 34px;
+      border-radius: 16px;
+      box-shadow: 0 10px 32px #123b5d20;
+    }
 
+    h1 {
+      margin: 0 0 8px;
+      color: #123b5d;
+    }
 
+    p {
+      color: #607384;
+      line-height: 1.5;
+    }
+
+    .role {
+      font-size: 14px;
+      margin: 0 0 25px;
+    }
+
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #b8c2cc;
+      border-radius: 8px;
+      font: inherit;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: #123b5d;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .message {
+      display: none;
+      margin-top: 18px;
+      padding: 11px;
+      border-radius: 8px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .message.success {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .message.error {
+      display: block;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .links {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 22px;
+    }
+
+    .links a {
+      color: #145b88;
+      text-decoration: none;
+    }
+  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='site-theme.css') }}">
+</head>
+<body>
+  <main class="card">
+    <h1>🛣️ Government Login</h1>
+    <p class="role">AI Road Guardian · Government Dashboard</p>
+    <p>Authorized officers and ministers only.</p>
+
+    <form id="loginForm">
+      <label for="email">Government Email</label>
+      <input
+        id="email"
+        type="email"
+        name="username"
+        placeholder="Enter government email"
+        autocomplete="username"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        type="password"
+        name="password"
+        placeholder="Enter password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button id="loginBtn" type="submit">Login to Government Dashboard</button>
+    </form>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <nav class="links" aria-label="Page navigation">
+      <a href="/">← Home</a>
+    </nav>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const btn = document.getElementById("loginBtn");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      btn.textContent = "🔄 Verifying credentials...";
+      btn.disabled = true;
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("/government-auth", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          message.style.display = "block";
+          message.className = "message success";
+          message.textContent = "✅ Login successful! Opening dashboard...";
+
+          setTimeout(function () {
+            window.location.href = "/dashboard";
+          }, 1000);
+        } else {
+          message.style.display = "block";
+          message.className = "message error";
+          message.textContent = "❌ Incorrect email or password.";
+
+          btn.textContent = "Login to Government Dashboard";
+          btn.disabled = false;
+        }
+      } catch (error) {
+        message.style.display = "block";
+        message.className = "message error";
+        message.textContent = "❌ Unable to connect to the server.";
+
+        btn.textContent = "Login to Government Dashboard";
+        btn.disabled = false;
+      }
+    });
+  </script>
 </body>
-
 </html>
