@@ -370,8 +370,12 @@ DATABASE = "road_guardian.db"
 def get_db():
 
     connection = sqlite3.connect(
-        DATABASE
+        DATABASE,
+        timeout=30
     )
+
+    connection.execute("PRAGMA busy_timeout = 30000")
+    connection.execute("PRAGMA synchronous = NORMAL")
 
     connection.row_factory = (
         sqlite3.Row
@@ -387,6 +391,8 @@ def get_db():
 def init_database():
 
     connection = get_db()
+
+    connection.execute("PRAGMA journal_mode = WAL")
 
 
     # -----------------------------------------------------
