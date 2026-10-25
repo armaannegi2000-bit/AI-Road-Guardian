@@ -10,6 +10,10 @@
 
     <title>AI Road Analysis | AI Road Guardian</title>
 
+    {% if ai_result.get("analysis_status") == "pending" %}
+    <meta http-equiv="refresh" content="6;url={{ url_for('analysis', id=complaint_id) }}">
+    {% endif %}
+
     <style>
 
         * {
@@ -230,10 +234,10 @@
 
 
         /* =========================
-           ESTIMATED DEPTH
+           VISUAL CONFIDENCE
         ========================= */
 
-        .depth-value {
+        .confidence-value {
 
             color: #263238;
 
@@ -464,9 +468,13 @@
             <!-- STATUS -->
 
             <div class="status">
-
-                ✅ Road report received.
-                AI analysis completed.
+                {% if ai_result.get("analysis_status") == "pending" %}
+                    ✅ Report saved. AI image analysis is running in the background; this page will refresh automatically.
+                {% elif ai_result.get("analysis_status") == "unavailable" %}
+                    ✅ Report saved. AI analysis is temporarily unavailable; the complaint is still recorded for review.
+                {% else %}
+                    ✅ Road report received. AI analysis completed.
+                {% endif %}
 
             </div>
 
@@ -524,31 +532,9 @@
 
                 <div class="result-box">
                     <h3>Visual Confidence</h3>
-                    <p class="value depth-value">
+                    <p class="value confidence-value">
                         {{ ai_result.get("visual_confidence", "Not available") }}
                     </p>
-                </div>
-
-
-                <!-- ESTIMATED DEPTH -->
-
-                <div class="result-box">
-
-                    <h3>
-                        Estimated Depth
-                    </h3>
-
-                    <p class="value depth-value">
-
-                        {{ ai_result.estimated_depth }}
-
-                    </p>
-
-                    <p>
-                        Depth confidence: {{ ai_result.get("depth_confidence", "Low") }}.
-                        {{ ai_result.get("depth_reference", "No measurement scale was identified.") }}
-                    </p>
-
                 </div>
 
 
@@ -561,7 +547,7 @@
                     </h3>
 
                     <p class="value
-                    {% if ai_result.get("analysis_status") == "unavailable" %}
+                    {% if ai_result.get("analysis_status") in ["pending", "unavailable"] %}
                         priority-unavailable
                     {% elif ai_result.priority|lower == 'high' %}
                         priority-high
@@ -572,7 +558,7 @@
                     {% endif %}
                     ">
 
-                        {{ "Not assessed — AI unavailable" if ai_result.get("analysis_status") == "unavailable" else ai_result.priority }}
+                        {{ "Analysis pending" if ai_result.get("analysis_status") == "pending" else "Not assessed — AI unavailable" if ai_result.get("analysis_status") == "unavailable" else ai_result.priority }}
 
                     </p>
 
@@ -624,7 +610,7 @@
 
             <p class="note">
 
-                ⚠️ {{ ai_result.get("limitations", "A single image cannot reliably establish damage depth or confirm road safety.") }}
+                ⚠️ {{ ai_result.get("limitations", "Image-only analysis cannot replace an on-site engineering inspection.") }}
                 {% if ai_result.get("requires_site_inspection", True) %}
                     An on-site engineer inspection is recommended before repair decisions.
                 {% else %}

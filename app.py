@@ -4,6 +4,7 @@ from google import genai
 from google.genai import types
 import os
 import json
+import base64
 import math
 import re
 import threading
@@ -11,6 +12,7 @@ import time
 import uuid
 import sqlite3
 import requests
+from types import SimpleNamespace
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -20,6 +22,9 @@ _NOMINATIM_LOCK = threading.Lock()
 _NOMINATIM_LAST_REQUEST = 0.0
 _NOMINATIM_COOLDOWN_UNTIL = 0.0
 _NOMINATIM_CACHE = {}
+_AI_ANALYSIS_WAKE = threading.Event()
+_AI_ANALYSIS_START_LOCK = threading.Lock()
+_AI_ANALYSIS_THREAD = None
 
 # =========================================================
 # ENVIRONMENT
@@ -31,6 +36,11 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 GEMINI_FALLBACK_MODEL = os.getenv(
     "GEMINI_FALLBACK_MODEL",
     "gemini-3.6-flash"
+)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_FALLBACK_MODEL = os.getenv(
+    "GROQ_FALLBACK_MODEL",
+    "qwen/qwen3.8-27b"
 )
 
 
@@ -45,7 +55,19 @@ if GEMINI_API_KEY:
     print("Gemini API key loaded successfully.")
 
     client = genai.Client(
-        api_key=GEMINI_API_KEY
+        api_key=GEMINI_API_KEY,
+        http_options=types.HttpOptions(
+            # Bound each request and retry transient 503/5xx errors twice
+            # with exponential backoff before moving to the fallback model.
+            timeout=20_000,
+            retry_options=types.HttpRetryOptions(
+                attempts=3,
+                initial_delay=1.0,
+                max_delay=8.0,
+                exp_base=2.0,
+                jitter=1.0
+            )
+        )
     )
 
 else:
@@ -56,16 +78,158 @@ else:
 
     client = None
 
+if GROQ_API_KEY:
+    print("Groq free-tier fallback provider is configured.")
+else:
+    print("Groq fallback is not configured; set GROQ_API_KEY to enable it.")
+
+
+def _strict_provider_schema(schema):
+    """Copy a JSON schema and mark object fields as required for strict mode."""
+    schema = json.loads(json.dumps(schema))
+
+    def update(node):
+        if not isinstance(node, dict):
+            return
+        if node.get("type") == "object":
+            properties = node.get("properties", {})
+            node["required"] = list(properties.keys())
+            node["additionalProperties"] = False
+            for value in properties.values():
+                update(value)
+        if "items" in node:
+            update(node["items"])
+        for key in ("anyOf", "oneOf", "allOf"):
+            for child in node.get(key, []):
+                update(child)
+
+    update(schema)
+    return schema
+
+
+def _groq_response_text(prompt, image_path=None, schema=None):
+    """Call the independent Groq fallback, retrying transient errors once."""
+    if not GROQ_API_KEY:
+        raise RuntimeError("Groq fallback is not configured (GROQ_API_KEY is missing).")
+
+    content = [{"type": "text", "text": prompt}]
+    if image_path:
+        with open(image_path, "rb") as image_file:
+            image_data = base64.b64encode(image_file.read()).decode("ascii")
+        extension = os.path.splitext(image_path)[1].lower()
+        mime_type = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".webp": "image/webp"
+        }.get(extension)
+        if not mime_type:
+            raise ValueError("The image format is not supported by the Groq fallback.")
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{mime_type};base64,{image_data}"
+            }
+        })
+
+    payload = {
+        "model": GROQ_FALLBACK_MODEL,
+        "messages": [{"role": "user", "content": content}],
+        "max_completion_tokens": 1200,
+        "temperature": 0.2
+    }
+    if schema:
+        payload["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "road_guardian_analysis",
+                "strict": True,
+                "schema": _strict_provider_schema(schema)
+            }
+        }
+    else:
+        payload["response_format"] = {"type": "json_object"}
+
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    retryable_statuses = {408, 409, 429, 500, 502, 503, 504}
+
+    for attempt in range(2):
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=(8, 45)
+            )
+        except requests.RequestException:
+            if attempt == 0:
+                time.sleep(1)
+                continue
+            raise
+
+        if response.status_code in retryable_statuses and attempt == 0:
+            time.sleep(1)
+            continue
+        if not response.ok:
+            raise RuntimeError(
+                f"Groq fallback returned HTTP {response.status_code}."
+            )
+
+        body = response.json()
+        choices = body.get("choices") or []
+        if not choices:
+            raise ValueError("Groq fallback returned no completion choices.")
+        output_text = choices[0].get("message", {}).get("content") or ""
+        if not isinstance(output_text, str) or not output_text.strip():
+            raise ValueError("Groq fallback returned no usable text.")
+        return output_text.strip()
+
+    raise RuntimeError("Groq fallback did not return a response.")
+
+
+def _parse_json_text(text):
+    text = (text or "").strip()
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE).strip()
+    if not text:
+        raise ValueError("The AI provider returned no structured JSON content.")
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        start = text.find("{")
+        if start < 0:
+            raise ValueError("The AI provider response did not contain a JSON object.")
+        value, _end = json.JSONDecoder().raw_decode(text[start:])
+    if not isinstance(value, dict):
+        raise ValueError("The AI provider response was not a JSON object.")
+    return value
+
+
+def _validate_ai_result(result, required_fields=(), enum_fields=None, provider="AI"):
+    if not isinstance(result, dict):
+        raise ValueError(f"{provider} response was not a JSON object.")
+    missing = [field for field in required_fields if field not in result]
+    if missing:
+        raise ValueError(
+            f"{provider} JSON omitted required fields: " + ", ".join(missing)
+        )
+    for field, allowed_values in (enum_fields or {}).items():
+        if result.get(field) not in allowed_values:
+            raise ValueError(f"{provider} returned an invalid {field} value.")
+    return result
+
 
 def generate_gemini_content(contents, config=None):
-    """Try the configured Gemini model, then a vision-capable fallback on 503."""
-    if client is None:
-        raise RuntimeError("Gemini client is not configured.")
+    """Try Gemini models, then use Groq for text-only secondary analysis."""
+    models = []
+    if client is not None:
+        models.append(GEMINI_MODEL)
+        if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
+            models.append(GEMINI_FALLBACK_MODEL)
 
-    models = [GEMINI_MODEL]
-    if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
-        models.append(GEMINI_FALLBACK_MODEL)
-
+    last_error = None
     for index, model_name in enumerate(models):
         try:
             response = client.models.generate_content(
@@ -75,25 +239,29 @@ def generate_gemini_content(contents, config=None):
             )
             return response, model_name
         except Exception as error:
-            code = getattr(error, "code", None)
-            status = str(getattr(error, "status", "")).upper()
-            message = str(error).upper()
-            is_temporary_overload = (
-                code == 503
-                or status == "UNAVAILABLE"
-                or "503 UNAVAILABLE" in message
-                or "CURRENTLY EXPERIENCING HIGH DEMAND" in message
-            )
+            last_error = error
+            if index + 1 < len(models):
+                print(
+                    f"Gemini model {model_name} failed; trying "
+                    f"{models[index + 1]}."
+                )
 
-            if not is_temporary_overload or index + 1 >= len(models):
-                raise
-
+    if GROQ_API_KEY:
+        try:
             print(
-                f"Gemini model {model_name} is temporarily unavailable; "
-                f"trying fallback model {models[index + 1]}."
+                "Gemini text analysis unavailable; trying Groq fallback "
+                f"model {GROQ_FALLBACK_MODEL}."
             )
+            prompt = contents if isinstance(contents, str) else "\n".join(
+                part for part in contents if isinstance(part, str)
+            )
+            output_text = _groq_response_text(prompt)
+            return SimpleNamespace(text=output_text), f"groq:{GROQ_FALLBACK_MODEL}"
+        except Exception as error:
+            last_error = error
+            print("Groq fallback for text analysis failed:", error)
 
-    raise RuntimeError("No Gemini model was available.")
+    raise last_error or RuntimeError("No AI provider is configured or available.")
 
 
 def _parse_gemini_json_response(response):
@@ -106,79 +274,66 @@ def _parse_gemini_json_response(response):
         if isinstance(parsed, dict):
             return parsed
 
-    text = (getattr(response, "text", None) or "").strip()
-    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE).strip()
-    if not text:
-        raise ValueError("Gemini returned no structured JSON content.")
-
-    try:
-        value = json.loads(text)
-    except json.JSONDecodeError:
-        # Recover a JSON object if the model added a short preamble or suffix.
-        start = text.find("{")
-        if start < 0:
-            raise ValueError("Gemini response did not contain a JSON object.")
-        value, _end = json.JSONDecoder().raw_decode(text[start:])
-
-    if not isinstance(value, dict):
-        raise ValueError("Gemini response was not a JSON object.")
-    return value
+    return _parse_json_text(getattr(response, "text", None) or "")
 
 
-def generate_gemini_json(contents, config=None, required_fields=(), enum_fields=None):
-    """Try each configured model until it returns usable structured JSON."""
-    if client is None:
-        raise RuntimeError("Gemini client is not configured.")
-
-    models = [GEMINI_MODEL]
-    if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
-        models.append(GEMINI_FALLBACK_MODEL)
+def generate_gemini_json(
+    contents,
+    config=None,
+    required_fields=(),
+    enum_fields=None,
+    image_path=None,
+    skip_gemini=False
+):
+    """Try Gemini's configured models, then Groq's independent JSON fallback."""
+    models = []
+    if client is not None and not skip_gemini:
+        models.append(GEMINI_MODEL)
+        if GEMINI_FALLBACK_MODEL and GEMINI_FALLBACK_MODEL not in models:
+            models.append(GEMINI_FALLBACK_MODEL)
 
     last_error = None
     for index, model_name in enumerate(models):
-        for attempt in range(2):
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=config
-                )
-                result = _parse_gemini_json_response(response)
-                missing = [field for field in required_fields if field not in result]
-                if missing:
-                    raise ValueError("Gemini JSON omitted required fields: " + ", ".join(missing))
-                for field, allowed_values in (enum_fields or {}).items():
-                    if result.get(field) not in allowed_values:
-                        raise ValueError(f"Gemini returned an invalid {field} value.")
-                return result, model_name
-            except Exception as error:
-                last_error = error
-                code = getattr(error, "code", None)
-                status = str(getattr(error, "status", "")).upper()
-                message = str(error).upper()
-                retryable = (
-                    code in (408, 429, 500, 502, 503, 504)
-                    or status in {"UNAVAILABLE", "RESOURCE_EXHAUSTED", "INTERNAL", "DEADLINE_EXCEEDED"}
-                    or any(marker in message for marker in (
-                        "408", "429", "500", "502", "503", "504",
-                        "UNAVAILABLE", "RESOURCE_EXHAUSTED", "HIGH DEMAND"
-                    ))
-                )
-
-                if retryable and attempt == 0:
-                    print(f"Gemini model {model_name} had a temporary error; retrying once.")
-                    time.sleep(1)
-                    continue
-
-                break
-
-        if index + 1 < len(models):
-            print(
-                f"Gemini model {model_name} did not return usable JSON; "
-                f"trying fallback model {models[index + 1]}."
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=config
             )
+            result = _parse_gemini_json_response(response)
+            _validate_ai_result(result, required_fields, enum_fields, "Gemini")
+            return result, model_name
+        except Exception as error:
+            last_error = error
+            if index + 1 < len(models):
+                print(
+                    f"Gemini model {model_name} did not return usable JSON; "
+                    f"trying fallback model {models[index + 1]}."
+                )
 
-    raise last_error or RuntimeError("No Gemini model returned usable JSON.")
+    if GROQ_API_KEY:
+        try:
+            print(
+                "Gemini structured analysis unavailable; trying Groq "
+                f"fallback model {GROQ_FALLBACK_MODEL}."
+            )
+            prompt = contents if isinstance(contents, str) else "\n".join(
+                part for part in contents if isinstance(part, str)
+            )
+            schema = getattr(config, "response_json_schema", None) if config else None
+            output_text = _groq_response_text(
+                prompt,
+                image_path=image_path,
+                schema=schema
+            )
+            result = _parse_json_text(output_text)
+            _validate_ai_result(result, required_fields, enum_fields, "Groq")
+            return result, f"groq:{GROQ_FALLBACK_MODEL}"
+        except Exception as error:
+            last_error = error
+            print("Groq fallback for structured analysis failed:", error)
+
+    raise last_error or RuntimeError("No AI provider is configured or available.")
 
 
 # =========================================================
@@ -406,6 +561,20 @@ def init_database():
             coordinates TEXT PRIMARY KEY,
             address TEXT NOT NULL,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
+    # Persist pending AI work so it can resume after a web worker restart.
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ai_analysis_jobs (
+            complaint_id TEXT PRIMARY KEY,
+            status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            next_attempt_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_error TEXT
         )
         """
     )
@@ -649,6 +818,25 @@ def row_to_complaint(row):
             ):
 
                 ai_result = {}
+
+            # Hide legacy depth fields saved by earlier versions of the app.
+            for field in (
+                "estimated_depth",
+                "estimated_depth_cm",
+                "depth_confidence",
+                "depth_reference"
+            ):
+                ai_result.pop(field, None)
+
+            limitations = ai_result.get("limitations")
+            if isinstance(limitations, str) and re.search(
+                r"\bdepth\b",
+                limitations,
+                re.IGNORECASE
+            ):
+                ai_result["limitations"] = (
+                    "Image-only analysis cannot replace an on-site engineering inspection."
+                )
 
 
     except Exception:
@@ -1102,10 +1290,10 @@ def analyze_road_image(
 ):
 
     # -----------------------------------------------------
-    # Gemini unavailable
+    # Both providers unavailable
     # -----------------------------------------------------
 
-    if client is None:
+    if client is None and not GROQ_API_KEY:
 
         return {
 
@@ -1114,12 +1302,6 @@ def analyze_road_image(
 
             "analysis_status":
                 "unavailable",
-
-            "estimated_depth":
-                "Not reliably measurable from a single image; field measurement required.",
-
-            "depth_confidence":
-                "Low",
 
             "visible_evidence":
                 "AI analysis was unavailable, so the image was not assessed.",
@@ -1131,7 +1313,7 @@ def analyze_road_image(
                 True,
 
             "limitations":
-                "AI analysis was unavailable. A field engineer must assess the image and measure damage.",
+                "AI analysis was unavailable. A field engineer should inspect the road and confirm repair needs.",
 
             "priority":
                 "Not assessed",
@@ -1153,7 +1335,7 @@ def analyze_road_image(
         "AI ROAD GUARDIAN"
     )
     print(
-        "Gemini is analyzing the image..."
+        "AI analysis starting (Gemini first; Groq free-tier backup if configured)..."
     )
     print(
         "========================================"
@@ -1167,9 +1349,17 @@ def analyze_road_image(
         # Upload image to Gemini
         # -------------------------------------------------
 
-        uploaded_file = client.files.upload(
-            file=image_path
-        )
+        uploaded_file = None
+        if client is not None:
+            try:
+                uploaded_file = client.files.upload(file=image_path)
+            except Exception as upload_error:
+                if not GROQ_API_KEY:
+                    raise
+                print(
+                    "Gemini image upload failed; switching to Groq fallback:",
+                    upload_error
+                )
 
 
         # -------------------------------------------------
@@ -1189,27 +1379,21 @@ waterlogging, broken edge, uneven pavement, damaged manhole area, debris, no obv
 or unable to assess).
 2. visible_evidence: brief concrete visual observations. Say when the image is blurry, distant, dark,
 obstructed, or does not clearly show road damage.
-3. estimated_depth_cm and depth_reference: a numeric range in centimeters is allowed ONLY if a
-measurement scale or an object with a clearly known size is visible in the same plane as the damage.
-Perspective, shadows, water, and apparent size are not valid depth scales. Without a valid scale,
-estimated_depth_cm must be an empty string and depth_reference must say no reliable scale is visible.
-If a valid scale is visible, estimated_depth_cm must contain only a rough range (for example, "5-8"),
-without a unit. depth_confidence must be Low, Medium, or High; use Low whenever the scale or perspective
-is imperfect. Never guess a depth from a normal single photo.
-4. priority: exactly Low, Medium, or High. This is a provisional visual triage level, not an official
+3. priority: exactly Low, Medium, or High. This is a provisional visual triage level, not an official
 engineering rating. Use High only for clearly visible immediate hazards; uncertain images should not
 be escalated solely because they are unclear.
-5. visual_confidence: Low, Medium, or High for the image-based assessment (not a probability).
-6. possible_cause: a cautious possibility only when supported by visible evidence; otherwise say it
+4. visual_confidence: Low, Medium, or High for the image-based assessment (not a probability).
+5. possible_cause: a cautious possibility only when supported by visible evidence; otherwise say it
 cannot be determined from the image.
-7. recommendation: a short practical next step. Recommend an on-site engineer inspection for unclear,
-potentially hazardous, or depth-related decisions. Never claim the image alone confirms safe or repaired condition.
-8. requires_site_inspection: true when a physical inspection is needed to confirm damage, depth, or priority.
-9. limitations: clearly state the relevant limits of this single image. Always explain that depth cannot
-be reliably measured without a visible scale.
+6. recommendation: a short practical next step. Recommend an on-site engineer inspection for unclear
+or potentially hazardous conditions. Never claim the image alone confirms a safe or repaired road.
+7. requires_site_inspection: true when a physical inspection is needed to confirm damage or priority.
+8. limitations: clearly state that this image-only assessment cannot replace an on-site engineering inspection.
 
 Do not invent details, distances, measurements, or certainty. Do not provide a separate severity field.
-Return only JSON matching the supplied schema. Keep text concise and suitable for citizens and road officers.
+Return only one concise JSON object with exactly these keys and value types:
+{"issue_type":"string","visible_evidence":"string","priority":"Low|Medium|High","visual_confidence":"Low|Medium|High","possible_cause":"string","recommendation":"string","requires_site_inspection":true,"limitations":"string"}
+Keep every text value to one short sentence where possible. Do not include markdown or text outside the JSON object.
 """
 
 
@@ -1218,49 +1402,14 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
         # -------------------------------------------------
 
         ai_result, analysis_model = generate_gemini_json(
-            contents=[
-                uploaded_file,
-                prompt
-            ],
+            contents=[uploaded_file, prompt] if uploaded_file else prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_json_schema={
-                    "type": "object",
-                    "properties": {
-                        "issue_type": {"type": "string"},
-                        "visible_evidence": {"type": "string"},
-                        "estimated_depth_cm": {"type": "string"},
-                        "depth_reference": {"type": "string"},
-                        "depth_confidence": {"type": "string", "enum": ["Low", "Medium", "High"]},
-                        "priority": {"type": "string", "enum": ["Low", "Medium", "High"]},
-                        "visual_confidence": {"type": "string", "enum": ["Low", "Medium", "High"]},
-                        "possible_cause": {"type": "string"},
-                        "recommendation": {"type": "string"},
-                        "requires_site_inspection": {"type": "boolean"},
-                        "limitations": {"type": "string"}
-                    },
-                    "required": [
-                        "issue_type",
-                        "visible_evidence",
-                        "estimated_depth_cm",
-                        "depth_reference",
-                        "depth_confidence",
-                        "priority",
-                        "visual_confidence",
-                        "possible_cause",
-                        "recommendation",
-                        "requires_site_inspection",
-                        "limitations"
-                    ]
-                },
-                max_output_tokens=800
+                max_output_tokens=1200
             ),
             required_fields=(
                 "issue_type",
                 "visible_evidence",
-                "estimated_depth_cm",
-                "depth_reference",
-                "depth_confidence",
                 "priority",
                 "visual_confidence",
                 "possible_cause",
@@ -1269,10 +1418,11 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 "limitations"
             ),
             enum_fields={
-                "depth_confidence": {"Low", "Medium", "High"},
                 "priority": {"Low", "Medium", "High"},
                 "visual_confidence": {"Low", "Medium", "High"}
-            }
+            },
+            image_path=image_path,
+            skip_gemini=(client is not None and uploaded_file is None)
         )
 
 
@@ -1286,47 +1436,15 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 return default
             return value.strip()[:limit]
 
-        depth_estimate = safe_text("estimated_depth_cm", "")
-        depth_estimate = re.sub(r"\s*cm\s*$", "", depth_estimate, flags=re.IGNORECASE)
-        depth_reference = safe_text("depth_reference", "", limit=240)
-        has_depth_range = bool(re.fullmatch(
-            r"\s*\d+(?:\.\d+)?\s*(?:-|–|to)\s*\d+(?:\.\d+)?\s*",
-            depth_estimate,
-            flags=re.IGNORECASE
-        ))
-        has_measurement_reference = bool(re.search(
-            r"\b(ruler|measuring tape|tape measure|measurement scale|known-size reference)\b",
-            depth_reference,
-            flags=re.IGNORECASE
-        ))
-
-        # Never display numeric depth unless a measurement reference is
-        # explicitly identified. A single unscaled photo cannot establish depth.
-        if has_depth_range and has_measurement_reference:
-            estimated_depth = (
-                f"{depth_estimate} cm (rough visual estimate; field measurement required)"
-            )
-            normalized_depth_reference = depth_reference
-            depth_confidence = str(ai_result.get("depth_confidence", "Low")).strip().capitalize()
-        else:
-            estimated_depth = "Not reliably measurable from a single image; field measurement required."
-            normalized_depth_reference = "No reliable measurement scale was identified."
-            depth_confidence = "Low"
-
         visual_confidence = str(ai_result.get("visual_confidence", "Low")).strip().capitalize()
         if visual_confidence not in ["Low", "Medium", "High"]:
             visual_confidence = "Low"
-        if depth_confidence not in ["Low", "Medium", "High"]:
-            depth_confidence = "Low"
 
         ai_result = {
             "analysis_status": "complete",
             "analysis_model": analysis_model,
             "issue_type": safe_text("issue_type", "Unable to assess image."),
             "visible_evidence": safe_text("visible_evidence", "No reliable visual evidence was returned."),
-            "estimated_depth": estimated_depth,
-            "depth_reference": normalized_depth_reference,
-            "depth_confidence": depth_confidence,
             "visual_confidence": visual_confidence,
             "priority": safe_text("priority", "Medium", limit=20),
             "possible_cause": safe_text("possible_cause", "Cannot be determined from the image."),
@@ -1338,7 +1456,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             ),
             "limitations": safe_text(
                 "limitations",
-                "A single photo cannot reliably establish depth or confirm road safety."
+                "Image-only analysis cannot replace an on-site engineering inspection."
             )
         }
 
@@ -1367,6 +1485,8 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             "priority"
         ] = priority
 
+        print(f"Road image analysis completed by {analysis_model}.")
+
 
         return ai_result
 
@@ -1377,9 +1497,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
 
     except (json.JSONDecodeError, ValueError) as error:
 
-        print(
-            "Gemini did not return valid structured analysis:"
-        )
+        print("AI providers did not return valid structured analysis:")
         print(error)
 
 
@@ -1391,12 +1509,6 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             "analysis_status":
                 "unavailable",
 
-            "estimated_depth":
-                "Not reliably measurable from a single image; field measurement required.",
-
-            "depth_confidence":
-                "Low",
-
             "visible_evidence":
                 "The AI response could not be read reliably.",
 
@@ -1407,7 +1519,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 True,
 
             "limitations":
-                "The AI response was invalid. A field engineer must assess the image and measure damage.",
+                "The AI response was invalid. A field engineer should inspect the road and confirm repair needs.",
 
             "priority":
                 "Not assessed",
@@ -1427,9 +1539,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
 
     except Exception as error:
 
-        print(
-            "Gemini analysis error:"
-        )
+        print("AI analysis error:")
 
         print(error)
 
@@ -1442,12 +1552,6 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
             "analysis_status":
                 "unavailable",
 
-            "estimated_depth":
-                "Not reliably measurable from a single image; field measurement required.",
-
-            "depth_confidence":
-                "Low",
-
             "visible_evidence":
                 "AI analysis could not be completed.",
 
@@ -1458,7 +1562,7 @@ Return only JSON matching the supplied schema. Keep text concise and suitable fo
                 True,
 
             "limitations":
-                "AI analysis could not be completed. A field engineer must assess the image and measure damage.",
+                "AI analysis could not be completed. A field engineer should inspect the road and confirm repair needs.",
 
             "priority":
                 "Not assessed",
@@ -1761,6 +1865,210 @@ REPORT DATA:
         print("Duplicate comparison unavailable:", error)
         return location_review_fallback()
 
+def pending_ai_result():
+    """Honest placeholder shown while queued image analysis is running."""
+    return {
+        "analysis_status": "pending",
+        "issue_type": "AI analysis in progress",
+        "visible_evidence": "Your report is saved. The image assessment is still processing.",
+        "visual_confidence": "Pending",
+        "priority": "Not assessed",
+        "possible_cause": "Not available until the image assessment is complete.",
+        "recommendation": "You can use the complaint ID to track this report now.",
+        "requires_site_inspection": True,
+        "limitations": "The image assessment is pending; an on-site inspection remains necessary for engineering decisions."
+    }
+
+
+def _claim_ai_analysis_job():
+    """Atomically claim one queued job, or recover a job abandoned by a dead worker."""
+    connection = get_db()
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        row = connection.execute(
+            """
+            SELECT complaint_id, attempts
+            FROM ai_analysis_jobs
+            WHERE (status = 'queued' AND next_attempt_at <= CURRENT_TIMESTAMP)
+               OR (status = 'processing' AND updated_at <= datetime('now', '-5 minutes'))
+            ORDER BY next_attempt_at ASC, complaint_id ASC
+            LIMIT 1
+            """
+        ).fetchone()
+        if row is None:
+            connection.commit()
+            return None
+
+        attempts = row["attempts"] + 1
+        connection.execute(
+            """
+            UPDATE ai_analysis_jobs
+            SET status = 'processing', attempts = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE complaint_id = ?
+            """,
+            (attempts, row["complaint_id"])
+        )
+        connection.commit()
+        return row["complaint_id"], attempts
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def _run_ai_analysis_job(complaint_id, attempts):
+    """Analyze a saved report and persist results without holding a web request open."""
+    try:
+        connection = get_db()
+        try:
+            complaint = connection.execute(
+                "SELECT photo, problem, description, location FROM complaints WHERE complaint_id = ?",
+                (complaint_id,)
+            ).fetchone()
+        finally:
+            connection.close()
+
+        if complaint is None:
+            connection = get_db()
+            try:
+                connection.execute(
+                    "UPDATE ai_analysis_jobs SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE complaint_id = ?",
+                    (complaint_id,)
+                )
+                connection.commit()
+            finally:
+                connection.close()
+            return
+
+        photo_path = os.path.join(app.config["UPLOAD_FOLDER"], complaint["photo"] or "")
+        ai_result = analyze_road_image(photo_path)
+
+        # Avoid another Gemini call during a primary-analysis outage. Duplicate
+        # review stays in the AI job when the image assessment succeeded.
+        if ai_result.get("analysis_status") == "complete":
+            ai_result["possible_duplicates"] = detect_possible_duplicate_reports(
+                complaint["location"],
+                complaint["problem"],
+                complaint["description"]
+            )
+        else:
+            ai_result["possible_duplicates"] = []
+
+        updated_problem = complaint["problem"] or "Road problem reported"
+        if updated_problem.strip().lower() == "road problem reported":
+            updated_problem = ai_result.get("issue_type", updated_problem)
+
+        connection = get_db()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                """
+                UPDATE complaints
+                SET ai_result = ?, priority = ?, problem = ?
+                WHERE complaint_id = ?
+                """,
+                (
+                    json.dumps(ai_result),
+                    ai_result.get("priority", "Not assessed"),
+                    updated_problem,
+                    complaint_id
+                )
+            )
+            connection.execute(
+                """
+                UPDATE ai_analysis_jobs
+                SET status = 'done', updated_at = CURRENT_TIMESTAMP, last_error = NULL
+                WHERE complaint_id = ?
+                """,
+                (complaint_id,)
+            )
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+        print(
+            f"Background AI analysis finished for {complaint_id}: "
+            f"{ai_result.get('analysis_status', 'unknown')}"
+        )
+
+    except Exception as error:
+        print(f"Background AI job error for {complaint_id}:", error)
+        connection = get_db()
+        try:
+            if attempts < 3:
+                connection.execute(
+                    """
+                    UPDATE ai_analysis_jobs
+                    SET status = 'queued', next_attempt_at = datetime('now', '+30 seconds'),
+                        updated_at = CURRENT_TIMESTAMP, last_error = ?
+                    WHERE complaint_id = ?
+                    """,
+                    (str(error)[:300], complaint_id)
+                )
+            else:
+                failed_result = {
+                    **pending_ai_result(),
+                    "analysis_status": "unavailable",
+                    "issue_type": "AI analysis unavailable",
+                    "visible_evidence": "AI analysis could not be completed.",
+                    "visual_confidence": "Low",
+                    "priority": "Not assessed",
+                    "possible_cause": "The image could not be assessed reliably.",
+                    "recommendation": "A road authority engineer should inspect the reported location.",
+                    "limitations": "AI analysis could not be completed. A field engineer should inspect the road and confirm repair needs."
+                }
+                connection.execute("BEGIN IMMEDIATE")
+                connection.execute(
+                    "UPDATE complaints SET ai_result = ?, priority = 'Not assessed' WHERE complaint_id = ?",
+                    (json.dumps(failed_result), complaint_id)
+                )
+                connection.execute(
+                    """
+                    UPDATE ai_analysis_jobs
+                    SET status = 'failed', updated_at = CURRENT_TIMESTAMP, last_error = ?
+                    WHERE complaint_id = ?
+                    """,
+                    (str(error)[:300], complaint_id)
+                )
+            connection.commit()
+        except Exception as retry_error:
+            connection.rollback()
+            print(f"Could not update AI job state for {complaint_id}:", retry_error)
+        finally:
+            connection.close()
+
+
+def _ai_analysis_worker():
+    while True:
+        _AI_ANALYSIS_WAKE.clear()
+        try:
+            job = _claim_ai_analysis_job()
+            if job is None:
+                _AI_ANALYSIS_WAKE.wait(2)
+                continue
+            _run_ai_analysis_job(*job)
+        except Exception as error:
+            print("AI analysis queue error:", error)
+            _AI_ANALYSIS_WAKE.wait(2)
+
+
+def start_ai_analysis_worker():
+    """Start one background poller in this web process; DB claims prevent duplicates."""
+    global _AI_ANALYSIS_THREAD
+    with _AI_ANALYSIS_START_LOCK:
+        if _AI_ANALYSIS_THREAD is None or not _AI_ANALYSIS_THREAD.is_alive():
+            _AI_ANALYSIS_THREAD = threading.Thread(
+                target=_ai_analysis_worker,
+                name="road-guardian-ai-analysis",
+                daemon=True
+            )
+            _AI_ANALYSIS_THREAD.start()
+
+
 @app.route(
     "/submit-report",
     methods=["POST"]
@@ -1866,15 +2174,6 @@ def submit_report():
 
 
     # -----------------------------------------------------
-    # AI ANALYSIS
-    # -----------------------------------------------------
-
-    ai_result = analyze_road_image(
-        photo_path
-    )
-
-
-    # -----------------------------------------------------
     # Dynamic RG ID
     # -----------------------------------------------------
 
@@ -1945,22 +2244,13 @@ def submit_report():
     ).strip()
 
 
-    # If user did not provide problem,
-    # use the AI-detected issue type.
-
+    # The report is saved before any external AI call. A background worker
+    # fills in AI fields once Gemini responds.
     if not problem:
+        problem = "Road problem reported"
 
-        problem = ai_result[
-            "issue_type"
-        ]
-
-    # Compare against nearby or similarly addressed open reports.
-    # This only flags candidates for government review; it never blocks submission.
-    ai_result["possible_duplicates"] = detect_possible_duplicate_reports(
-        location,
-        problem,
-        description
-    )
+    ai_result = pending_ai_result()
+    ai_result["possible_duplicates"] = []
 
 
     # -----------------------------------------------------
@@ -1998,10 +2288,7 @@ def submit_report():
 
                 problem,
 
-                # AI priority
-                ai_result[
-                    "priority"
-                ],
+                ai_result["priority"],
 
                 # Initial workflow status
                 "Pending",
@@ -2022,6 +2309,14 @@ def submit_report():
             VALUES (?, ?)
             """,
             (complaint_id, "Pending")
+        )
+
+        connection.execute(
+            """
+            INSERT INTO ai_analysis_jobs (complaint_id, status)
+            VALUES (?, 'queued')
+            """,
+            (complaint_id,)
         )
 
         add_notification(
@@ -2050,6 +2345,8 @@ def submit_report():
 
         connection.close()
 
+    _AI_ANALYSIS_WAKE.set()
+
 
     print(
         "Complaint created:",
@@ -2065,21 +2362,7 @@ def submit_report():
     )
 
 
-    # -----------------------------------------------------
-    # Show AI analysis
-    # -----------------------------------------------------
-
-    return render_template(
-
-        "analysis.html",
-
-        complaint_id=
-            complaint_id,
-
-        ai_result=
-            ai_result
-
-    )
+    return redirect(url_for("analysis", id=complaint_id))
 
 
 # =========================================================
@@ -3267,6 +3550,8 @@ def engineer_logout():
 # =========================================================
 # RUN APPLICATION
 # =========================================================
+
+start_ai_analysis_worker()
 
 if __name__ == "__main__":
 

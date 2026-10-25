@@ -771,30 +771,6 @@
                         <p>
 
                             <strong>
-                                Estimated Depth:
-                            </strong>
-
-                            {{ complaint["ai_result"].get(
-                                "estimated_depth",
-                                "Not available"
-                            ) }}
-
-                        </p>
-
-
-                        <p>
-                            <strong>Depth Confidence:</strong>
-                            {{ complaint["ai_result"].get("depth_confidence", "Low") }}.
-                            {{ complaint["ai_result"].get(
-                                "depth_reference",
-                                "No measurement scale was identified."
-                            ) }}
-                        </p>
-
-
-                        <p>
-
-                            <strong>
                                 Possible Cause:
                             </strong>
 
@@ -824,7 +800,7 @@
                             <strong>Assessment Limits:</strong>
                             {{ complaint["ai_result"].get(
                                 "limitations",
-                                "A single image cannot reliably establish damage depth or confirm road safety."
+                                "Image-only analysis cannot replace an on-site engineering inspection."
                             ) }}
                             {% if complaint["ai_result"].get("requires_site_inspection", True) %}
                                 On-site engineer inspection is recommended.

@@ -1,4 +1,5 @@
 Flask
 python-dotenv
 google-genai==2.13.0
+requests
 gunicorn
