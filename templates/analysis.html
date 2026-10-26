@@ -10,10 +10,6 @@
 
     <title>AI Road Analysis | AI Road Guardian</title>
 
-    {% if ai_result.get("analysis_status") == "pending" %}
-    <meta http-equiv="refresh" content="6;url={{ url_for('analysis', id=complaint_id) }}">
-    {% endif %}
-
     <style>
 
         * {
@@ -33,6 +29,57 @@
                 );
 
             color: #1f2937;
+        }
+
+        .ai-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(232,244,248,.98), rgba(217,234,247,.99));
+            color: #123b5d;
+        }
+
+        .ai-overlay.active { display: flex; }
+        .ai-glow { position: absolute; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(25,118,210,.16), rgba(25,118,210,.05) 45%, transparent 70%); animation: glowPulse 3s ease-in-out infinite; }
+        .ai-grid { position: absolute; inset: 0; opacity: .16; background-image: linear-gradient(rgba(18,59,93,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(18,59,93,.12) 1px, transparent 1px); background-size: 45px 45px; mask-image: linear-gradient(to bottom, transparent, black 25%, black 75%, transparent); }
+        .ai-content { position: relative; z-index: 5; width: min(92%, 620px); text-align: center; }
+        .ai-brand { margin-bottom: 28px; color: #123b5d; font-size: 13px; font-weight: bold; letter-spacing: 3px; }
+        .ai-brand span { color: #1976d2; }
+        .ai-core { position: relative; display: flex; width: 190px; height: 190px; margin: auto; align-items: center; justify-content: center; }
+        .ring-one, .ring-two, .ring-three { position: absolute; border-radius: 50%; }
+        .ring-one { inset: 0; border: 3px solid rgba(18,59,93,.1); border-top-color: #123b5d; border-right-color: #1976d2; animation: rotateOne 3s linear infinite; }
+        .ring-two { inset: 20px; border: 2px solid rgba(25,118,210,.15); border-bottom-color: #1976d2; border-left-color: #0b5d8c; animation: rotateTwo 2s linear infinite; }
+        .ring-three { inset: 42px; border: 2px dashed rgba(18,59,93,.35); animation: rotateOne 1.5s linear infinite; }
+        .core-center { display: flex; width: 70px; height: 70px; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, #123b5d, #1976d2); color: white; font-size: 18px; font-weight: bold; box-shadow: 0 0 0 8px rgba(25,118,210,.08), 0 0 25px rgba(25,118,210,.35); animation: corePulse 1.7s ease-in-out infinite; }
+        .core-center::after { content: "AI"; }
+        .scan-beam { position: absolute; left: 25px; right: 25px; height: 3px; border-radius: 10px; background: linear-gradient(90deg, transparent, #1976d2, white, #1976d2, transparent); box-shadow: 0 0 8px rgba(25,118,210,.8); animation: scan 2.2s ease-in-out infinite; }
+        .orbit-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #1976d2; box-shadow: 0 0 8px rgba(25,118,210,.7); }
+        .dot-one { top: 8px; left: 92px; }
+        .dot-two { top: 92px; right: 10px; }
+        .dot-three { bottom: 8px; left: 92px; }
+        .ai-loading-title { margin: 30px 0 10px; color: #123b5d; font-size: 30px; }
+        .ai-loading-subtitle { min-height: 26px; color: #526777; font-size: 16px; transition: opacity .25s ease; }
+        .progress-container { margin-top: 32px; text-align: left; }
+        .progress-info { display: flex; justify-content: space-between; margin-bottom: 8px; color: #5c7180; font-size: 12px; font-weight: bold; letter-spacing: 1px; }
+        .progress-track { width: 100%; height: 7px; overflow: hidden; border-radius: 20px; background: rgba(18,59,93,.12); }
+        .progress-bar { width: 5%; height: 100%; border-radius: 20px; background: linear-gradient(90deg, #123b5d, #1976d2); box-shadow: 0 0 10px rgba(25,118,210,.5); transition: width .8s ease; }
+        .ai-status { margin-top: 20px; color: #657985; font-size: 12px; letter-spacing: .5px; }
+        .status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #167a67; box-shadow: 0 0 7px rgba(22,122,103,.5); animation: statusPulse 1s infinite; }
+        @keyframes glowPulse { 0%, 100% { transform: scale(.9); opacity: .6; } 50% { transform: scale(1.12); opacity: 1; } }
+        @keyframes rotateOne { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes rotateTwo { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes corePulse { 0%, 100% { transform: scale(.92); } 50% { transform: scale(1.07); } }
+        @keyframes scan { 0% { top: 18%; opacity: 0; } 20%, 50%, 80% { opacity: 1; } 100% { top: 82%; opacity: 0; } }
+        @keyframes statusPulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+        @media (max-width: 600px) {
+            .ai-core { width: 165px; height: 165px; }
+            .ai-loading-title { font-size: 25px; }
+            .ai-loading-subtitle { font-size: 15px; }
         }
 
 
@@ -469,7 +516,7 @@
 
             <div class="status">
                 {% if ai_result.get("analysis_status") == "pending" %}
-                    ✅ Report saved. AI image analysis is running in the background; this page will refresh automatically.
+                    ✅ Report saved. Preparing your AI findings…
                 {% elif ai_result.get("analysis_status") == "unavailable" %}
                     ✅ Report saved. AI analysis is temporarily unavailable; the complaint is still recorded for review.
                 {% else %}
@@ -660,6 +707,88 @@
     </div>
 
 
+    {% if ai_result.get("analysis_status") == "pending" %}
+    <div class="ai-overlay active" id="aiOverlay" role="status" aria-live="polite">
+        <div class="ai-glow"></div>
+        <div class="ai-grid"></div>
+        <div class="ai-content">
+            <div class="ai-brand">AI ROAD GUARDIAN <span>• GEMINI VISION</span></div>
+            <div class="ai-core" aria-hidden="true">
+                <div class="ring-one"></div>
+                <div class="ring-two"></div>
+                <div class="ring-three"></div>
+                <div class="core-center"></div>
+                <div class="scan-beam"></div>
+                <div class="orbit-dot dot-one"></div>
+                <div class="orbit-dot dot-two"></div>
+                <div class="orbit-dot dot-three"></div>
+            </div>
+            <h2 class="ai-loading-title" id="aiTitle">AI Vision Analysis</h2>
+            <div class="ai-loading-subtitle" id="aiSubtitle">Analyzing your road image...</div>
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="stageText">INITIALIZING</span>
+                    <span id="percentage">5%</span>
+                </div>
+                <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+            </div>
+            <div class="ai-status"><span class="status-dot"></span>Gemini Vision Engine is analyzing your road image</div>
+        </div>
+    </div>
+    <script>
+        (() => {
+            const title = document.getElementById("aiTitle");
+            const subtitle = document.getElementById("aiSubtitle");
+            const stage = document.getElementById("stageText");
+            const percentage = document.getElementById("percentage");
+            const progressBar = document.getElementById("progressBar");
+            const statusUrl = {{ url_for("analysis_status", complaint_id=complaint_id)|tojson }};
+            const analysisUrl = {{ url_for("analysis", id=complaint_id)|tojson }};
+            const stages = [
+                { percent: 12, stage: "IMAGE RECEIVED", title: "Vision System Activated", subtitle: "Reading your road image..." },
+                { percent: 27, stage: "IMAGE PROCESSING", title: "Scanning Road Surface", subtitle: "Examining visible road conditions..." },
+                { percent: 45, stage: "DAMAGE DETECTION", title: "Detecting Road Damage", subtitle: "Looking for potholes, cracks and waterlogging..." },
+                { percent: 63, stage: "VISUAL ANALYSIS", title: "Understanding the Scene", subtitle: "Analyzing road damage patterns..." },
+                { percent: 79, stage: "RISK ASSESSMENT", title: "Evaluating Priority", subtitle: "Determining urgency for authorities..." },
+                { percent: 91, stage: "AI REPORT", title: "Generating Analysis", subtitle: "Preparing your road assessment..." },
+                { percent: 96, stage: "FINALIZING", title: "Almost Done", subtitle: "Finalizing your AI road report..." }
+            ];
+            let stageIndex = 0;
+            const runStage = () => {
+                if (stageIndex >= stages.length || !document.getElementById("aiOverlay")) return;
+                const current = stages[stageIndex++];
+                progressBar.style.width = `${current.percent}%`;
+                percentage.textContent = `${current.percent}%`;
+                stage.textContent = current.stage;
+                title.textContent = current.title;
+                subtitle.textContent = current.subtitle;
+                window.setTimeout(runStage, 1300);
+            };
+            runStage();
+            const poll = async () => {
+                try {
+                    const response = await fetch(statusUrl, { cache: "no-store" });
+                    if (!response.ok) throw new Error("Could not check analysis status");
+                    const data = await response.json();
+                    if (data.analysis_status !== "pending") {
+                        const pageResponse = await fetch(analysisUrl, { cache: "no-store" });
+                        if (!pageResponse.ok) throw new Error("Could not load completed analysis");
+                        const page = new DOMParser().parseFromString(await pageResponse.text(), "text/html");
+                        const updatedCard = page.querySelector(".analysis-card");
+                        const currentCard = document.querySelector(".analysis-card");
+                        if (updatedCard && currentCard) currentCard.replaceWith(updatedCard);
+                        document.getElementById("aiOverlay")?.remove();
+                        return;
+                    }
+                } catch (error) {
+                    console.warn("AI analysis status check failed:", error);
+                }
+                window.setTimeout(poll, 4000);
+            };
+            window.setTimeout(poll, 2000);
+        })();
+    </script>
+    {% endif %}
 </body>
 
 </html>

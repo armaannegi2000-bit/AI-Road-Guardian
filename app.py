@@ -7,6 +7,7 @@ import json
 import base64
 import math
 import re
+import secrets
 import threading
 import time
 import uuid
@@ -42,6 +43,8 @@ GROQ_FALLBACK_MODEL = os.getenv(
     "GROQ_FALLBACK_MODEL",
     "qwen/qwen3.8-27b"
 )
+GOVERNMENT_USERNAME = os.getenv("GOVERNMENT_USERNAME")
+GOVERNMENT_PASSWORD = os.getenv("GOVERNMENT_PASSWORD")
 
 
 # =========================================================
@@ -342,9 +345,13 @@ def generate_gemini_json(
 
 app = Flask(__name__)
 
-app.secret_key = (
-    "ai-road-guardian-secret-key"
-)
+app.secret_key = os.getenv("SECRET_KEY") or secrets.token_urlsafe(48)
+
+if not os.getenv("SECRET_KEY"):
+    print("WARNING: SECRET_KEY is not configured; sessions will reset on restart.")
+
+if not GOVERNMENT_USERNAME or not GOVERNMENT_PASSWORD:
+    print("WARNING: Government login is disabled until its environment variables are configured.")
 
 
 UPLOAD_FOLDER = "static/uploads"
@@ -2418,6 +2425,20 @@ def analysis():
     )
 
 
+@app.route("/analysis-status/<complaint_id>")
+def analysis_status(complaint_id):
+    complaint = get_complaint(complaint_id)
+
+    if not complaint:
+        return jsonify({"error": "Complaint not found"}), 404
+
+    response = jsonify({
+        "analysis_status": complaint["ai_result"].get("analysis_status", "pending")
+    })
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 # =========================================================
 # TRACK COMPLAINT
 # =========================================================
@@ -2567,17 +2588,13 @@ def government_auth():
     # Existing government login
     # -----------------------------------------------------
 
-    if (
+    if not GOVERNMENT_USERNAME or not GOVERNMENT_PASSWORD:
+        return jsonify({
+            "success": False,
+            "message": "Government login is not configured. Contact the administrator."
+        }), 503
 
-        username ==
-        "officer@government.in"
-
-        and
-
-        password ==
-        "road123"
-
-    ):
+    if username == GOVERNMENT_USERNAME and password == GOVERNMENT_PASSWORD:
 
         session.clear()
 
