@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -344,6 +344,21 @@ def generate_gemini_json(
 # =========================================================
 
 app = Flask(__name__)
+
+
+@app.route("/service-worker.js")
+def service_worker():
+    response = send_from_directory("static", "service-worker.js")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    if request.path.startswith(("/api/", "/analysis-status/", "/track-notifications")):
+        return jsonify({"error": "Not found"}), 404
+    return render_template("404.html"), 404
 
 app.secret_key = os.getenv("SECRET_KEY") or secrets.token_urlsafe(48)
 
