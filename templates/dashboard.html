@@ -1262,7 +1262,7 @@
                                     <p class="verification-note">{{ update.note }}</p>
                                     <small>{{ update.created_at }} · {{ update.engineer_name }}</small>
                                     {% if update.photo %}
-                                        <p><a href="{{ url_for('static', filename='uploads/' ~ update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
+                                        <p><a href="{{ url_for('uploaded_photo', filename=update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
                                     {% endif %}
                                     {% if not loop.last %}<hr>{% endif %}
                                 {% endfor %}
@@ -1277,7 +1277,7 @@
                             {% if verification %}
                                 <span class="badge {% if verification.review_status == 'Approved' %}completed{% elif verification.review_status == 'Pending Review' %}medium{% else %}pending{% endif %}">{{ verification.review_status }}</span>
                                 <p class="verification-note">{{ verification.note }}</p>
-                                <a href="{{ url_for('static', filename='uploads/' ~ verification.photo) }}" target="_blank" rel="noopener">View repair photo</a>
+                                <a href="{{ url_for('uploaded_photo', filename=verification.photo) }}" target="_blank" rel="noopener">View repair photo</a>
                                 {% if verification.review_status == 'Pending Review' %}
                                     <form action="/review-repair-verification/{{ verification.id }}" method="POST" class="compact-form">
                                         <button type="submit" name="decision" value="approve" class="action-button">Approve</button>

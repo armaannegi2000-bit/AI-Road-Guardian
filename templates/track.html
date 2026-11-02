@@ -671,7 +671,7 @@
                                     <p>{{ update.get("note") }}</p>
                                 {% endif %}
                                 {% if update.get("photo") %}
-                                    <a href="{{ url_for('static', filename='uploads/' ~ update.get('photo')) }}" target="_blank" rel="noopener">
+                                    <a href="{{ url_for('uploaded_photo', filename=update.get('photo')) }}" target="_blank" rel="noopener">
                                         View progress photo
                                     </a>
                                 {% endif %}
@@ -703,10 +703,10 @@
                         {% endif %}
 
                         {% if repair_verification.get("photo") %}
-                            <a href="{{ url_for('static', filename='uploads/' ~ repair_verification.get('photo')) }}" target="_blank" rel="noopener">
+                            <a href="{{ url_for('uploaded_photo', filename=repair_verification.get('photo')) }}" target="_blank" rel="noopener">
                                 <img
                                     class="repair-photo"
-                                    src="{{ url_for('static', filename='uploads/' ~ repair_verification.get('photo')) }}"
+                                    src="{{ url_for('uploaded_photo', filename=repair_verification.get('photo')) }}"
                                     alt="Road repair photo submitted by the engineer for complaint {{ complaint_id }}"
                                     loading="lazy"
                                 >

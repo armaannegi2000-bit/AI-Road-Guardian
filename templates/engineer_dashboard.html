@@ -69,12 +69,12 @@ header h1{margin:0;font-size:clamp(23px,3vw,30px);letter-spacing:-.4px}header p{
         {% for update in complaint.get('work_updates', []) %}
           <p><strong>{{ update.status }} · {{ update.created_at }}</strong><br>{{ update.note }}</p>
           {% if update.photo %}
-            <p><a href="{{ url_for('static', filename='uploads/' ~ update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
+            <p><a href="{{ url_for('uploaded_photo', filename=update.photo) }}" target="_blank" rel="noopener">View progress photo</a></p>
           {% endif %}
         {% endfor %}
         {% if verification %}
           <p><strong>Latest verification:</strong> {{ verification.review_status }} — {{ verification.note }}</p>
-          <p><a href="{{ url_for('static', filename='uploads/' ~ verification.photo) }}" target="_blank" rel="noopener">View submitted repair photo</a></p>
+          <p><a href="{{ url_for('uploaded_photo', filename=verification.photo) }}" target="_blank" rel="noopener">View submitted repair photo</a></p>
         {% endif %}
         {% if not complaint.get('assigned_engineer') %}
           <form class="verify" action="/claim-complaint/{{ complaint_id }}" method="POST">

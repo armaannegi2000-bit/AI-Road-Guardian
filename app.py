@@ -11,7 +11,6 @@ import secrets
 import threading
 import time
 import uuid
-import sqlite3
 import requests
 from types import SimpleNamespace
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -32,6 +31,14 @@ _AI_ANALYSIS_THREAD = None
 # =========================================================
 
 load_dotenv()
+
+from database_support import DBIntegrityError, IS_POSTGRES, get_db
+from photo_storage import (
+    delete_uploaded_photo,
+    local_photo_path,
+    save_uploaded_photo,
+    serve_uploaded_photo,
+)
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 GEMINI_FALLBACK_MODEL = os.getenv(
@@ -108,6 +115,60 @@ def _strict_provider_schema(schema):
 
     update(schema)
     return schema
+
+
+_RETRYABLE_AI_STATUS_CODES = {408, 409, 425, 429, 500, 502, 503, 504}
+
+
+class _AIProviderUnavailable(RuntimeError):
+    def __init__(self, message, retryable=False):
+        super().__init__(message)
+        self.retryable = retryable
+
+
+class _AIAnalysisJobError(RuntimeError):
+    def __init__(self, message, retryable=False):
+        super().__init__(message)
+        self.retryable = retryable
+
+
+def _is_retryable_provider_error(error):
+    """Identify provider/network failures that may succeed on a later job attempt."""
+    if getattr(error, "retryable", None) is not None:
+        return bool(error.retryable)
+
+    if isinstance(error, requests.RequestException):
+        return True
+    if isinstance(error, ValueError):
+        # Malformed or incomplete model output can be corrected on a fresh call.
+        return True
+
+    error_type = type(error).__name__.lower()
+    if any(marker in error_type for marker in ("timeout", "connection", "temporar")):
+        return True
+
+    status = getattr(error, "status_code", None)
+    if status is None:
+        status = getattr(error, "code", None)
+    if status is None:
+        response = getattr(error, "response", None)
+        status = getattr(response, "status_code", None)
+    try:
+        if int(status) in _RETRYABLE_AI_STATUS_CODES:
+            return True
+    except (TypeError, ValueError):
+        pass
+
+    message = str(error)
+    status_match = re.search(r"\b(?:HTTP|status(?: code)?)\s*(\d{3})\b", message, re.IGNORECASE)
+    if status_match and int(status_match.group(1)) in _RETRYABLE_AI_STATUS_CODES:
+        return True
+
+    message = message.lower()
+    return any(marker in message for marker in (
+        "timed out", "timeout", "connection reset", "service unavailable",
+        "temporarily unavailable", "rate limit", "too many requests"
+    ))
 
 
 def _groq_response_text(prompt, image_path=None, schema=None):
@@ -296,6 +357,7 @@ def generate_gemini_json(
             models.append(GEMINI_FALLBACK_MODEL)
 
     last_error = None
+    retryable_failures = []
     for index, model_name in enumerate(models):
         try:
             response = client.models.generate_content(
@@ -308,6 +370,7 @@ def generate_gemini_json(
             return result, model_name
         except Exception as error:
             last_error = error
+            retryable_failures.append(_is_retryable_provider_error(error))
             if index + 1 < len(models):
                 print(
                     f"Gemini model {model_name} did not return usable JSON; "
@@ -334,9 +397,14 @@ def generate_gemini_json(
             return result, f"groq:{GROQ_FALLBACK_MODEL}"
         except Exception as error:
             last_error = error
+            retryable_failures.append(_is_retryable_provider_error(error))
             print("Groq fallback for structured analysis failed:", error)
 
-    raise last_error or RuntimeError("No AI provider is configured or available.")
+    message = str(last_error or "No AI provider is configured or available.")
+    raise _AIProviderUnavailable(
+        message,
+        retryable=any(retryable_failures)
+    ) from last_error
 
 
 # =========================================================
@@ -389,21 +457,9 @@ os.makedirs(
 DATABASE = "road_guardian.db"
 
 
-def get_db():
-
-    connection = sqlite3.connect(
-        DATABASE,
-        timeout=30
-    )
-
-    connection.execute("PRAGMA busy_timeout = 30000")
-    connection.execute("PRAGMA synchronous = NORMAL")
-
-    connection.row_factory = (
-        sqlite3.Row
-    )
-
-    return connection
+@app.route("/uploads/<path:filename>")
+def uploaded_photo(filename):
+    return serve_uploaded_photo(filename, app.config["UPLOAD_FOLDER"])
 
 
 # =========================================================
@@ -516,7 +572,7 @@ def init_database():
             connection.execute(
                 f"""
                 ALTER TABLE complaints
-                ADD COLUMN {column_name}
+                ADD COLUMN {"IF NOT EXISTS " if IS_POSTGRES else ""}{column_name}
                 {column_type}
                 """
             )
@@ -604,6 +660,13 @@ def init_database():
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             last_error TEXT
         )
+        """
+    )
+
+    connection.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_ai_analysis_jobs_ready
+        ON ai_analysis_jobs (status, next_attempt_at, updated_at)
         """
     )
 
@@ -1331,6 +1394,9 @@ def analyze_road_image(
             "analysis_status":
                 "unavailable",
 
+            "_retryable":
+                False,
+
             "visible_evidence":
                 "AI analysis was unavailable, so the image was not assessed.",
 
@@ -1537,6 +1603,9 @@ Keep every text value to one short sentence where possible. Do not include markd
             "analysis_status":
                 "unavailable",
 
+            "_retryable":
+                True,
+
             "visible_evidence":
                 "The AI response could not be read reliably.",
 
@@ -1579,6 +1648,9 @@ Keep every text value to one short sentence where possible. Do not include markd
 
             "analysis_status":
                 "unavailable",
+
+            "_retryable":
+                _is_retryable_provider_error(error),
 
             "visible_evidence":
                 "AI analysis could not be completed.",
@@ -1914,13 +1986,13 @@ def _claim_ai_analysis_job():
     try:
         connection.execute("BEGIN IMMEDIATE")
         row = connection.execute(
-            """
+            f"""
             SELECT complaint_id, attempts
             FROM ai_analysis_jobs
             WHERE (status = 'queued' AND next_attempt_at <= CURRENT_TIMESTAMP)
                OR (status = 'processing' AND updated_at <= datetime('now', '-5 minutes'))
             ORDER BY next_attempt_at ASC, complaint_id ASC
-            LIMIT 1
+            LIMIT 1 {"FOR UPDATE SKIP LOCKED" if IS_POSTGRES else ""}
             """
         ).fetchone()
         if row is None:
@@ -1969,19 +2041,25 @@ def _run_ai_analysis_job(complaint_id, attempts):
                 connection.close()
             return
 
-        photo_path = os.path.join(app.config["UPLOAD_FOLDER"], complaint["photo"] or "")
-        ai_result = analyze_road_image(photo_path)
+        with local_photo_path(
+            complaint["photo"] or "",
+            app.config["UPLOAD_FOLDER"],
+        ) as photo_path:
+            ai_result = analyze_road_image(photo_path)
+
+        if ai_result.get("analysis_status") != "complete":
+            raise _AIAnalysisJobError(
+                ai_result.get("visible_evidence", "AI analysis did not complete."),
+                retryable=bool(ai_result.pop("_retryable", False))
+            )
 
         # Avoid another Gemini call during a primary-analysis outage. Duplicate
         # review stays in the AI job when the image assessment succeeded.
-        if ai_result.get("analysis_status") == "complete":
-            ai_result["possible_duplicates"] = detect_possible_duplicate_reports(
-                complaint["location"],
-                complaint["problem"],
-                complaint["description"]
-            )
-        else:
-            ai_result["possible_duplicates"] = []
+        ai_result["possible_duplicates"] = detect_possible_duplicate_reports(
+            complaint["location"],
+            complaint["problem"],
+            complaint["description"]
+        )
 
         updated_problem = complaint["problem"] or "Road problem reported"
         if updated_problem.strip().lower() == "road problem reported":
@@ -2027,7 +2105,8 @@ def _run_ai_analysis_job(complaint_id, attempts):
         print(f"Background AI job error for {complaint_id}:", error)
         connection = get_db()
         try:
-            if attempts < 3:
+            retryable = getattr(error, "retryable", True)
+            if retryable and attempts < 3:
                 connection.execute(
                     """
                     UPDATE ai_analysis_jobs
@@ -2175,29 +2254,20 @@ def submit_report():
     )
 
 
-    photo_path = os.path.join(
-
-        app.config[
-            "UPLOAD_FOLDER"
-        ],
-
-        filename
-
-    )
-
-
     # -----------------------------------------------------
     # Save photo
     # -----------------------------------------------------
 
-    photo.save(
-        photo_path
+    photo_location = save_uploaded_photo(
+        photo,
+        filename,
+        app.config["UPLOAD_FOLDER"],
     )
 
 
     print(
         "Photo saved:",
-        photo_path
+        photo_location
     )
 
 
@@ -2285,10 +2355,10 @@ def submit_report():
     # Save complaint
     # -----------------------------------------------------
 
-    connection = get_db()
-
+    connection = None
 
     try:
+        connection = get_db()
 
         connection.execute(
             """
@@ -2368,10 +2438,15 @@ def submit_report():
 
         connection.commit()
 
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+        delete_uploaded_photo(filename, app.config["UPLOAD_FOLDER"])
+        raise
 
     finally:
-
-        connection.close()
+        if connection is not None:
+            connection.close()
 
     _AI_ANALYSIS_WAKE.set()
 
@@ -2764,7 +2839,7 @@ def create_engineer():
             (full_name, email, generate_password_hash(password))
         )
         connection.commit()
-    except sqlite3.IntegrityError:
+    except DBIntegrityError:
         return redirect(url_for("engineer_accounts", error="email_exists"))
     finally:
         connection.close()
@@ -2955,15 +3030,12 @@ def post_engineer_update(complaint_id):
         return ("Invalid work status", 400)
 
     filename = None
-    saved_path = None
 
     if photo and photo.filename:
         extension = os.path.splitext(photo.filename)[1].lower()
         if extension not in [".jpg", ".jpeg", ".png", ".webp"]:
             return ("Unsupported image format", 400)
         filename = str(uuid.uuid4()) + extension
-        saved_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        photo.save(saved_path)
 
     connection = get_db()
 
@@ -2986,6 +3058,9 @@ def post_engineer_update(complaint_id):
 
         if complaint["status"] == "Completed":
             return ("Completed complaints cannot receive new work updates", 400)
+
+        if filename:
+            save_uploaded_photo(photo, filename, app.config["UPLOAD_FOLDER"])
 
         connection.execute(
             """
@@ -3024,8 +3099,8 @@ def post_engineer_update(complaint_id):
         connection.commit()
 
     except Exception:
-        if saved_path and os.path.exists(saved_path):
-            os.remove(saved_path)
+        if filename:
+            delete_uploaded_photo(filename, app.config["UPLOAD_FOLDER"])
         raise
 
     finally:
@@ -3057,7 +3132,7 @@ def submit_repair_verification(complaint_id):
         return ("Unsupported image format", 400)
 
     connection = get_db()
-    saved_path = None
+    saved_filename = None
 
     try:
 
@@ -3077,8 +3152,8 @@ def submit_repair_verification(complaint_id):
             return ("This complaint is not assigned to that engineer", 403)
 
         filename = str(uuid.uuid4()) + extension
-        saved_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        photo.save(saved_path)
+        saved_filename = filename
+        save_uploaded_photo(photo, filename, app.config["UPLOAD_FOLDER"])
 
         connection.execute(
             """
@@ -3118,8 +3193,8 @@ def submit_repair_verification(complaint_id):
         connection.commit()
 
     except Exception:
-        if saved_path and os.path.exists(saved_path):
-            os.remove(saved_path)
+        if saved_filename:
+            delete_uploaded_photo(saved_filename, app.config["UPLOAD_FOLDER"])
         raise
 
     finally:
@@ -3589,7 +3664,16 @@ def engineer_logout():
 # RUN APPLICATION
 # =========================================================
 
-start_ai_analysis_worker()
+_ai_worker_mode = os.getenv("AI_ANALYSIS_WORKER_MODE", "inline").strip().lower()
+if _ai_worker_mode == "inline":
+    # Keep existing deployments compatible unless a separate worker is enabled.
+    start_ai_analysis_worker()
+elif _ai_worker_mode == "external":
+    print("AI analysis is handled by a separate worker process.")
+else:
+    raise RuntimeError(
+        "AI_ANALYSIS_WORKER_MODE must be 'inline' or 'external'."
+    )
 
 if __name__ == "__main__":
 
