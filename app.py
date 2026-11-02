@@ -1440,21 +1440,37 @@ def analyze_road_image(
     try:
 
         # -------------------------------------------------
-        # Upload image to Gemini
+        # Prepare the Gemini image input
         # -------------------------------------------------
 
-        uploaded_file = None
+        gemini_image = None
         if client is not None:
             try:
-                uploaded_file = client.files.upload(file=image_path)
-            except Exception as upload_error:
+                extension = os.path.splitext(image_path)[1].lower()
+                mime_type = {
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".png": "image/png",
+                    ".webp": "image/webp"
+                }.get(extension)
+                if not mime_type:
+                    raise ValueError("The uploaded image format is not supported.")
+
+                if os.path.getsize(image_path) <= 14 * 1024 * 1024:
+                    with open(image_path, "rb") as image_file:
+                        gemini_image = types.Part.from_bytes(
+                            data=image_file.read(),
+                            mime_type=mime_type
+                        )
+                else:
+                    gemini_image = client.files.upload(file=image_path)
+            except Exception as prepare_error:
                 if not GROQ_API_KEY:
                     raise
                 print(
-                    "Gemini image upload failed; switching to Groq fallback:",
-                    upload_error
+                    "Gemini image preparation failed; switching to Groq fallback:",
+                    prepare_error
                 )
-
 
         # -------------------------------------------------
         # AI prompt
@@ -1496,7 +1512,7 @@ Keep every text value to one short sentence where possible. Do not include markd
         # -------------------------------------------------
 
         ai_result, analysis_model = generate_gemini_json(
-            contents=[uploaded_file, prompt] if uploaded_file else prompt,
+            contents=[gemini_image, prompt] if gemini_image else prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 max_output_tokens=1200
@@ -1516,7 +1532,7 @@ Keep every text value to one short sentence where possible. Do not include markd
                 "visual_confidence": {"Low", "Medium", "High"}
             },
             image_path=image_path,
-            skip_gemini=(client is not None and uploaded_file is None)
+            skip_gemini=(client is not None and gemini_image is None)
         )
 
 

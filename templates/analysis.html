@@ -783,9 +783,9 @@
                 } catch (error) {
                     console.warn("AI analysis status check failed:", error);
                 }
-                window.setTimeout(poll, 4000);
+                window.setTimeout(poll, 2000);
             };
-            window.setTimeout(poll, 2000);
+            window.setTimeout(poll, 1000);
         })();
     </script>
     {% endif %}
