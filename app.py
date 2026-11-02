@@ -67,11 +67,11 @@ if GEMINI_API_KEY:
     client = genai.Client(
         api_key=GEMINI_API_KEY,
         http_options=types.HttpOptions(
-            # Bound each request and retry transient 503/5xx errors twice
+            # Bound each request and retry transient 503/5xx errors once
             # with exponential backoff before moving to the fallback model.
             timeout=20_000,
             retry_options=types.HttpRetryOptions(
-                attempts=3,
+                attempts=2,
                 initial_delay=1.0,
                 max_delay=8.0,
                 exp_base=2.0,
@@ -226,7 +226,7 @@ def _groq_response_text(prompt, image_path=None, schema=None):
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=(8, 45)
+                timeout=(8, 30)
             )
         except requests.RequestException:
             if attempt == 0:
@@ -2053,13 +2053,8 @@ def _run_ai_analysis_job(complaint_id, attempts):
                 retryable=bool(ai_result.pop("_retryable", False))
             )
 
-        # Avoid another Gemini call during a primary-analysis outage. Duplicate
-        # review stays in the AI job when the image assessment succeeded.
-        ai_result["possible_duplicates"] = detect_possible_duplicate_reports(
-            complaint["location"],
-            complaint["problem"],
-            complaint["description"]
-        )
+        # Save the image assessment first so optional duplicate review does not delay the visible result.
+        ai_result["possible_duplicates"] = []
 
         updated_problem = complaint["problem"] or "Road problem reported"
         if updated_problem.strip().lower() == "road problem reported":
@@ -2100,6 +2095,34 @@ def _run_ai_analysis_job(complaint_id, attempts):
             f"Background AI analysis finished for {complaint_id}: "
             f"{ai_result.get('analysis_status', 'unknown')}"
         )
+
+        # Duplicate matching is useful but secondary; do it after the image result is available.
+        try:
+            possible_duplicates = detect_possible_duplicate_reports(
+                complaint["location"],
+                complaint["problem"],
+                complaint["description"]
+            )
+            if possible_duplicates:
+                ai_result["possible_duplicates"] = possible_duplicates
+                duplicate_connection = get_db()
+                try:
+                    duplicate_connection.execute(
+                        "UPDATE complaints SET ai_result = ? WHERE complaint_id = ?",
+                        (json.dumps(ai_result), complaint_id)
+                    )
+                    duplicate_connection.commit()
+                except Exception:
+                    duplicate_connection.rollback()
+                    raise
+                finally:
+                    duplicate_connection.close()
+                print(f"Duplicate review finished for {complaint_id}.")
+        except Exception as error:
+            print(
+                f"Duplicate review failed for {complaint_id}; image analysis remains available:",
+                error
+            )
 
     except Exception as error:
         print(f"Background AI job error for {complaint_id}:", error)
